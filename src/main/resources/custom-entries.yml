@@ -1,0 +1,50 @@
+# ============================================================
+# CUSTOM ENTRY DEFINITIONS
+# ============================================================
+# Define collection-log entries for custom items from other plugins
+# (OakTools, ExecutableItems, Nexo, or anything else) by listing the
+# PersistentDataContainer (PDC) key they store on the item.
+#
+# Each entry produces one row in the entries table. Items matching the
+# PDC rule are routed to this entry on pickup.
+#
+# Required fields:
+#   namespace:     synthetic namespace for the entry-id (e.g. 'oaktools')
+#   key:           unique key within the namespace (e.g. 'emerald_hammer')
+#   category:      items | blocks
+#   display-name:  text shown in the GUI
+#   pdc-key:       NamespacedKey to read (e.g. 'oaktools:tool_id')
+#
+# Optional fields:
+#   icon-material:   Bukkit Material for the GUI icon (defaults to BARRIER)
+#   icon-model-data: integer custom model data (for textured icons)
+#   pdc-value:       expected PDC value; "*" matches any value
+#
+# Example (commented out — uncomment and adjust for your items):
+#
+# entries:
+#   - namespace: oaktools
+#     key: emerald_hammer
+#     category: items
+#     display-name: Emerald Hammer
+#     icon-material: NETHERITE_PICKAXE
+#     pdc-key: oaktools:tool_id
+#     pdc-value: emerald_hammer
+#
+#   - namespace: nexo
+#     key: plushie_axolotl
+#     category: items
+#     display-name: Axolotl Plushie
+#     icon-material: PLAYER_HEAD
+#     pdc-key: nexo:id
+#     pdc-value: plushie_axolotl
+#
+#   - namespace: executableitems
+#     key: relic_of_oak
+#     category: items
+#     display-name: Relic of Oak
+#     icon-material: NETHER_STAR
+#     pdc-key: executableitems:executableitem_id
+#     pdc-value: relic_of_oak
+
+entries: []

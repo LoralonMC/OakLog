@@ -1,6 +1,7 @@
 package dev.oakheart.oaklog.registry;
 
 import dev.oakheart.oaklog.enumeration.VanillaEnumerator;
+import dev.oakheart.oaklog.integration.adapter.AdapterRegistry;
 import dev.oakheart.oaklog.model.Entry;
 import dev.oakheart.oaklog.model.EntryDescriptor;
 import dev.oakheart.oaklog.storage.DataStore;
@@ -19,13 +20,16 @@ public class RegistrySync {
     private final DataStore dataStore;
     private final EntryRegistry registry;
     private final VanillaEnumerator vanillaEnumerator;
+    private final AdapterRegistry adapterRegistry;
     private final Logger logger;
 
     public RegistrySync(DataStore dataStore, EntryRegistry registry,
-                        VanillaEnumerator vanillaEnumerator, Logger logger) {
+                        VanillaEnumerator vanillaEnumerator,
+                        AdapterRegistry adapterRegistry, Logger logger) {
         this.dataStore = dataStore;
         this.registry = registry;
         this.vanillaEnumerator = vanillaEnumerator;
+        this.adapterRegistry = adapterRegistry;
         this.logger = logger;
     }
 
@@ -37,6 +41,7 @@ public class RegistrySync {
         }
 
         List<EntryDescriptor> live = new ArrayList<>(vanillaEnumerator.enumerate());
+        live.addAll(adapterRegistry.enumerateAll());
 
         Set<String> liveKeys = new HashSet<>();
         List<EntryDescriptor> toInsert = new ArrayList<>();

@@ -6,6 +6,8 @@ import dev.oakheart.oaklog.commands.OakLogCommand;
 import dev.oakheart.oaklog.detection.ItemBlockListener;
 import dev.oakheart.oaklog.enumeration.BiomeGrouping;
 import dev.oakheart.oaklog.enumeration.VanillaEnumerator;
+import dev.oakheart.oaklog.integration.adapter.AdapterRegistry;
+import dev.oakheart.oaklog.integration.adapter.PdcAdapter;
 import dev.oakheart.oaklog.progress.ProgressManager;
 import dev.oakheart.oaklog.registry.EntryRegistry;
 import dev.oakheart.oaklog.registry.RegistrySync;
@@ -31,6 +33,7 @@ public final class OakLog extends JavaPlugin {
     private EntryRegistry entryRegistry;
     private RegistrySync registrySync;
     private ProgressManager progressManager;
+    private AdapterRegistry adapterRegistry;
     private DateFormat dateFormat;
     private IconRenderer iconRenderer;
 
@@ -84,7 +87,12 @@ public final class OakLog extends JavaPlugin {
         variantResolvers = new VariantResolvers();
         vanillaEnumerator = new VanillaEnumerator(configManager, variantResolvers);
         entryRegistry = new EntryRegistry();
-        registrySync = new RegistrySync(dataStore, entryRegistry, vanillaEnumerator, getLogger());
+
+        adapterRegistry = new AdapterRegistry(getLogger());
+        adapterRegistry.register(new PdcAdapter(this));
+
+        registrySync = new RegistrySync(dataStore, entryRegistry, vanillaEnumerator,
+                adapterRegistry, getLogger());
         progressManager = new ProgressManager(this, configManager, dataStore, entryRegistry);
         dateFormat = new DateFormat(configManager);
         iconRenderer = new IconRenderer(messageManager, dateFormat);
@@ -97,7 +105,7 @@ public final class OakLog extends JavaPlugin {
     private void registerListeners() {
         getServer().getPluginManager().registerEvents(progressManager, this);
         getServer().getPluginManager().registerEvents(
-                new ItemBlockListener(entryRegistry, progressManager), this);
+                new ItemBlockListener(entryRegistry, adapterRegistry, progressManager), this);
         getServer().getPluginManager().registerEvents(new GuiListener(), this);
     }
 
@@ -161,6 +169,10 @@ public final class OakLog extends JavaPlugin {
 
     public DateFormat getDateFormatter() {
         return dateFormat;
+    }
+
+    public AdapterRegistry getAdapterRegistry() {
+        return adapterRegistry;
     }
 
     public void debug(String message) {
