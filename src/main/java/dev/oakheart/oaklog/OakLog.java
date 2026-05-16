@@ -4,7 +4,12 @@ import dev.oakheart.message.MessageManager;
 import dev.oakheart.oaklog.config.ConfigManager;
 import dev.oakheart.oaklog.commands.OakLogCommand;
 import dev.oakheart.oaklog.config.SetsConfig;
+import dev.oakheart.oaklog.detection.BiomeListener;
+import dev.oakheart.oaklog.detection.EffectListener;
+import dev.oakheart.oaklog.detection.EnchantmentListener;
+import dev.oakheart.oaklog.detection.EntityListener;
 import dev.oakheart.oaklog.detection.ItemBlockListener;
+import dev.oakheart.oaklog.detection.StructureListener;
 import dev.oakheart.oaklog.enumeration.BiomeGrouping;
 import dev.oakheart.oaklog.enumeration.SetComputer;
 import dev.oakheart.oaklog.enumeration.VanillaEnumerator;
@@ -40,6 +45,7 @@ public final class OakLog extends JavaPlugin {
     private SetsConfig setsConfig;
     private SetComputer setComputer;
     private LeaderboardManager leaderboardManager;
+    private BiomeListener biomeListener;
     private DateFormat dateFormat;
     private IconRenderer iconRenderer;
 
@@ -52,6 +58,7 @@ public final class OakLog extends JavaPlugin {
             registerCommands();
             progressManager.start();
             leaderboardManager.start();
+            biomeListener.start();
 
             getLogger().info("OakLog enabled with " + entryRegistry.liveCount() + " live entries.");
             if (configManager.isDebug()) {
@@ -65,6 +72,9 @@ public final class OakLog extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (biomeListener != null) {
+            biomeListener.shutdown();
+        }
         if (leaderboardManager != null) {
             leaderboardManager.shutdown();
         }
@@ -122,7 +132,17 @@ public final class OakLog extends JavaPlugin {
         getServer().getPluginManager().registerEvents(progressManager, this);
         getServer().getPluginManager().registerEvents(
                 new ItemBlockListener(entryRegistry, adapterRegistry, progressManager), this);
+        getServer().getPluginManager().registerEvents(
+                new EntityListener(entryRegistry, progressManager, variantResolvers), this);
+        getServer().getPluginManager().registerEvents(
+                new EffectListener(entryRegistry, progressManager), this);
+        getServer().getPluginManager().registerEvents(
+                new EnchantmentListener(entryRegistry, progressManager), this);
+        getServer().getPluginManager().registerEvents(
+                new StructureListener(configManager, entryRegistry, progressManager), this);
         getServer().getPluginManager().registerEvents(new GuiListener(), this);
+
+        biomeListener = new BiomeListener(this, configManager, entryRegistry, progressManager);
     }
 
     private void registerCommands() {

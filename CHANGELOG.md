@@ -31,4 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Recent activity GUI showing the most recent collections (per-player) sorted by collection timestamp
 - Leaderboard GUI showing top players globally and per-category, with the viewing player's rank pinned at the bottom
 - LeaderboardManager with async refresh every `leaderboard.refresh-interval-seconds`
+- Entity detection via `EntityDeathEvent` (player killer, including indirect kills) and `PlayerInteractEntityEvent` (name-tagging a mob). Variants are resolved on the entity instance, so killing a white sheep marks `sheep_white` collected
+- Biome detection via a scheduled tick task that checks each online player's current biome every `detection.biome-check-interval` ticks
+- Structure detection on chunk boundary crossing — `world.getStructures(chunk)` is consulted and every generated structure in the entered chunk is recorded
+- Effect detection via `EntityPotionEffectEvent` (covers potions, splash, lingering, beacon, conduit, suspicious stew, area-effect clouds)
+- Enchantment detection on `PlayerInventorySlotChangeEvent` — both applied enchantments and enchanted-book stored enchantments are recognised
 - `biome-groups.yml` for organizing biomes by dimension and climate in the upcoming Biomes tab
