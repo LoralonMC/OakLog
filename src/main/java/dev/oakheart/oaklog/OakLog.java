@@ -2,8 +2,10 @@ package dev.oakheart.oaklog;
 
 import dev.oakheart.message.MessageManager;
 import dev.oakheart.oaklog.config.ConfigManager;
+import dev.oakheart.oaklog.detection.ItemBlockListener;
 import dev.oakheart.oaklog.enumeration.BiomeGrouping;
 import dev.oakheart.oaklog.enumeration.VanillaEnumerator;
+import dev.oakheart.oaklog.progress.ProgressManager;
 import dev.oakheart.oaklog.registry.EntryRegistry;
 import dev.oakheart.oaklog.registry.RegistrySync;
 import dev.oakheart.oaklog.storage.SqliteStore;
@@ -24,12 +26,15 @@ public final class OakLog extends JavaPlugin {
     private VanillaEnumerator vanillaEnumerator;
     private EntryRegistry entryRegistry;
     private RegistrySync registrySync;
+    private ProgressManager progressManager;
 
     @Override
     public void onEnable() {
         try {
             initializeComponents();
             syncRegistry();
+            registerListeners();
+            progressManager.start();
 
             getLogger().info("OakLog enabled with " + entryRegistry.liveCount() + " live entries.");
             if (configManager.isDebug()) {
@@ -43,6 +48,9 @@ public final class OakLog extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (progressManager != null) {
+            progressManager.shutdown();
+        }
         if (dataStore != null) {
             dataStore.close();
         }
@@ -70,10 +78,17 @@ public final class OakLog extends JavaPlugin {
         vanillaEnumerator = new VanillaEnumerator(configManager, variantResolvers);
         entryRegistry = new EntryRegistry();
         registrySync = new RegistrySync(dataStore, entryRegistry, vanillaEnumerator, getLogger());
+        progressManager = new ProgressManager(this, configManager, dataStore, entryRegistry);
     }
 
     private void syncRegistry() {
         registrySync.run();
+    }
+
+    private void registerListeners() {
+        getServer().getPluginManager().registerEvents(progressManager, this);
+        getServer().getPluginManager().registerEvents(
+                new ItemBlockListener(entryRegistry, progressManager), this);
     }
 
     public boolean reload() {
@@ -120,6 +135,10 @@ public final class OakLog extends JavaPlugin {
 
     public VariantResolvers getVariantResolvers() {
         return variantResolvers;
+    }
+
+    public ProgressManager getProgressManager() {
+        return progressManager;
     }
 
     public void debug(String message) {

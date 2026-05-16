@@ -4,6 +4,8 @@ import dev.oakheart.oaklog.config.ConfigManager;
 import dev.oakheart.oaklog.model.Category;
 import dev.oakheart.oaklog.model.Entry;
 import dev.oakheart.oaklog.model.EntryDescriptor;
+import dev.oakheart.oaklog.model.PlayerProgress;
+import dev.oakheart.oaklog.model.RecentEntry;
 
 import java.io.File;
 import java.sql.Connection;
@@ -17,6 +19,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -236,6 +239,156 @@ public class SqliteStore implements DataStore {
             }
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Failed to bulk update retired_at", e);
+        }
+    }
+
+    // ========================================
+    //          Per-player progress CRUD
+    // ========================================
+
+    @Override
+    public synchronized Map<Integer, Long> loadCollected(UUID playerUuid) {
+        String sql = "SELECT entry_id, collected_at FROM collected WHERE player_uuid = ?";
+        Map<Integer, Long> result = new HashMap<>();
+        try {
+            PreparedStatement stmt = prepareCached(sql);
+            stmt.setString(1, playerUuid.toString());
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    result.put(rs.getInt("entry_id"), rs.getLong("collected_at"));
+                }
+            }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to load collected entries for " + playerUuid, e);
+        }
+        return result;
+    }
+
+    @Override
+    public synchronized List<RecentEntry> loadRecent(UUID playerUuid, int limit) {
+        String sql = """
+                SELECT entry_id, collected_at
+                FROM collected
+                WHERE player_uuid = ?
+                ORDER BY collected_at DESC
+                LIMIT ?
+                """;
+        List<RecentEntry> out = new ArrayList<>();
+        try {
+            PreparedStatement stmt = prepareCached(sql);
+            stmt.setString(1, playerUuid.toString());
+            stmt.setInt(2, limit);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    out.add(new RecentEntry(rs.getInt("entry_id"), rs.getLong("collected_at")));
+                }
+            }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to load recent entries for " + playerUuid, e);
+        }
+        return out;
+    }
+
+    @Override
+    public synchronized PlayerProgress.ToastState loadToastState(UUID playerUuid) {
+        String sql = "SELECT toast_enabled, toast_milestones_only FROM player_settings WHERE player_uuid = ?";
+        try {
+            PreparedStatement stmt = prepareCached(sql);
+            stmt.setString(1, playerUuid.toString());
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) return null;
+                boolean enabled = rs.getInt("toast_enabled") != 0;
+                boolean milestones = rs.getInt("toast_milestones_only") != 0;
+                if (!enabled) return PlayerProgress.ToastState.OFF;
+                return milestones ? PlayerProgress.ToastState.MILESTONES : PlayerProgress.ToastState.ON;
+            }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to load toast state for " + playerUuid, e);
+            return null;
+        }
+    }
+
+    @Override
+    public synchronized void saveToastState(UUID playerUuid, PlayerProgress.ToastState state) {
+        String sql = """
+                INSERT INTO player_settings (player_uuid, toast_enabled, toast_milestones_only)
+                VALUES (?, ?, ?)
+                ON CONFLICT(player_uuid) DO UPDATE SET
+                    toast_enabled = excluded.toast_enabled,
+                    toast_milestones_only = excluded.toast_milestones_only
+                """;
+        boolean enabled = state != PlayerProgress.ToastState.OFF;
+        boolean milestones = state == PlayerProgress.ToastState.MILESTONES;
+        try {
+            PreparedStatement stmt = prepareCached(sql);
+            stmt.setString(1, playerUuid.toString());
+            stmt.setInt(2, enabled ? 1 : 0);
+            stmt.setInt(3, milestones ? 1 : 0);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to save toast state for " + playerUuid, e);
+        }
+    }
+
+    @Override
+    public synchronized void batchInsertCollected(Map<UUID, Map<Integer, Long>> dirtyByPlayer) {
+        if (dirtyByPlayer.isEmpty()) return;
+        String sql = """
+                INSERT INTO collected (player_uuid, entry_id, collected_at)
+                VALUES (?, ?, ?)
+                ON CONFLICT(player_uuid, entry_id) DO NOTHING
+                """;
+        try {
+            Connection conn = getConnection();
+            boolean prevAutoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                for (Map.Entry<UUID, Map<Integer, Long>> outer : dirtyByPlayer.entrySet()) {
+                    String uuidStr = outer.getKey().toString();
+                    for (Map.Entry<Integer, Long> inner : outer.getValue().entrySet()) {
+                        stmt.setString(1, uuidStr);
+                        stmt.setInt(2, inner.getKey());
+                        stmt.setLong(3, inner.getValue());
+                        stmt.addBatch();
+                    }
+                }
+                stmt.executeBatch();
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(prevAutoCommit);
+            }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to flush collected entries", e);
+        }
+    }
+
+    @Override
+    public synchronized void deleteCollected(UUID playerUuid, int entryId) {
+        String sql = "DELETE FROM collected WHERE player_uuid = ? AND entry_id = ?";
+        try {
+            PreparedStatement stmt = prepareCached(sql);
+            stmt.setString(1, playerUuid.toString());
+            stmt.setInt(2, entryId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to delete collected entry for " + playerUuid, e);
+        }
+    }
+
+    @Override
+    public synchronized int deleteAllCollected(UUID playerUuid) {
+        String sql = "DELETE FROM collected WHERE player_uuid = ?";
+        try {
+            PreparedStatement stmt = prepareCached(sql);
+            stmt.setString(1, playerUuid.toString());
+            return stmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to wipe collected entries for " + playerUuid, e);
+            return 0;
         }
     }
 
