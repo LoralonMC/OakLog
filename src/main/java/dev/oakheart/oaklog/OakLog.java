@@ -4,6 +4,10 @@ import dev.oakheart.message.MessageManager;
 import dev.oakheart.oaklog.config.ConfigManager;
 import dev.oakheart.oaklog.audit.AuditLog;
 import dev.oakheart.oaklog.toast.ToastService;
+import dev.oakheart.oaklog.ui.search.AnvilSearchInput;
+import dev.oakheart.oaklog.ui.search.ChatSearchInput;
+import dev.oakheart.oaklog.ui.search.SearchInput;
+import dev.oakheart.oaklog.ui.search.SignSearchInput;
 import dev.oakheart.oaklog.commands.OakLogCommand;
 import dev.oakheart.oaklog.config.SetsConfig;
 import dev.oakheart.oaklog.detection.BiomeListener;
@@ -50,6 +54,7 @@ public final class OakLog extends JavaPlugin {
     private BiomeListener biomeListener;
     private AuditLog auditLog;
     private ToastService toastService;
+    private SearchInput searchInput;
     private DateFormat dateFormat;
     private IconRenderer iconRenderer;
 
@@ -130,6 +135,13 @@ public final class OakLog extends JavaPlugin {
 
         toastService = new ToastService(this, configManager, entryRegistry);
         toastService.initialize();
+
+        SearchInput chat = new ChatSearchInput(this);
+        searchInput = switch (configManager.getSearchInput()) {
+            case "sign" -> new SignSearchInput(this, chat);
+            case "anvil" -> new AnvilSearchInput(this, chat);
+            default -> chat;
+        };
     }
 
     private void syncRegistry() {
@@ -236,6 +248,10 @@ public final class OakLog extends JavaPlugin {
 
     public ToastService getToastService() {
         return toastService;
+    }
+
+    public SearchInput getSearchInput() {
+        return searchInput;
     }
 
     public void debug(String message) {

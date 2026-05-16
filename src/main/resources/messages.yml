@@ -90,6 +90,9 @@ gui:
   set:
     title: "<#6B7A5E>Set <#6C757D>· <#f2ebd7><set>"
 
+  search:
+    title: "<#6B7A5E>Search <#6C757D>· <#f2ebd7><query>"
+
   leaderboard:
     title: "<#6B7A5E>Collection Log <#6C757D>· <#f2ebd7>Leaderboard"
     tab-total: "<#FCD472>Total"
@@ -149,6 +152,9 @@ commands:
 
   # Info command output
   info-line: "<#6C757D>[<#6B7A5E>ʟᴏɢ<#6C757D>] <#FCD472><display><#6C757D> · <#f2ebd7>id=<#FCD472><entry><#f2ebd7> category=<#FCD472><category><#f2ebd7> status=<#FCD472><status><#f2ebd7> sets=<#FCD472><sets>"
+
+  # Search
+  search-prompt: "<#6C757D>[<#6B7A5E>ʟᴏɢ<#6C757D>] <#f2ebd7>Type your search query in chat (or 'cancel'):"
 
   # Player help
   help-header: "<#6C757D>═══════ <#6B7A5E>OakLog <#6C757D>═══════"

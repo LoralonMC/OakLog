@@ -47,4 +47,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Toast frames escalate: per-entry collection = TASK, milestone (every N entries) = GOAL, category completion + full log completion = CHALLENGE
 - Toast preference (`on`/`off`/`milestones`) per player, default `off` (configurable via `toasts.default-state`)
 - Graceful no-op + one-time warning if PacketEvents isn't installed
+- Search via chat (`config.yml > search.input: chat`) — Hub search button or `/oaklog search` (coming) prompts the player; their next chat message is captured and the search results show in a paginated GUI. Sign and anvil input modes are stubbed in v1 and fall back to chat — they'll land in a follow-up release
 - `biome-groups.yml` for organizing biomes by dimension and climate in the upcoming Biomes tab
