@@ -48,4 +48,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Toast preference (`on`/`off`/`milestones`) per player, default `off` (configurable via `toasts.default-state`)
 - Graceful no-op + one-time warning if PacketEvents isn't installed
 - Search via chat (`config.yml > search.input: chat`) — Hub search button or `/oaklog search` (coming) prompts the player; their next chat message is captured and the search results show in a paginated GUI. Sign and anvil input modes are stubbed in v1 and fall back to chat — they'll land in a follow-up release
+- PlaceholderAPI expansion (`oaklog`): `%oaklog_total_collected%`, `%oaklog_total_entries%`, `%oaklog_total_percent%`, `%oaklog_progress_<category>%`, `%oaklog_percent_<category>%`, `%oaklog_toast_state%`, `%oaklog_rank%`. Drop-in for BetterGUI player-settings menus, holograms, and the OakheartWeb website
+- bStats metrics (relocated to `dev.oakheart.oaklog.bstats`) — Bukkit plugin ID placeholder until submission
 - `biome-groups.yml` for organizing biomes by dimension and climate in the upcoming Biomes tab

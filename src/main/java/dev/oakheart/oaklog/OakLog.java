@@ -3,7 +3,9 @@ package dev.oakheart.oaklog;
 import dev.oakheart.message.MessageManager;
 import dev.oakheart.oaklog.config.ConfigManager;
 import dev.oakheart.oaklog.audit.AuditLog;
+import dev.oakheart.oaklog.integration.OakLogPlaceholders;
 import dev.oakheart.oaklog.toast.ToastService;
+import org.bstats.bukkit.Metrics;
 import dev.oakheart.oaklog.ui.search.AnvilSearchInput;
 import dev.oakheart.oaklog.ui.search.ChatSearchInput;
 import dev.oakheart.oaklog.ui.search.SearchInput;
@@ -37,6 +39,8 @@ import java.util.logging.Level;
 
 public final class OakLog extends JavaPlugin {
 
+    private static final int BSTATS_PLUGIN_ID = 30000; // Update with real ID after submission
+
     private ConfigManager configManager;
     private MessageManager messageManager;
     private DebugLogger debugLogger;
@@ -68,6 +72,8 @@ public final class OakLog extends JavaPlugin {
             progressManager.start();
             leaderboardManager.start();
             biomeListener.start();
+            initializeMetrics();
+            registerPlaceholders();
 
             getLogger().info("OakLog enabled with " + entryRegistry.liveCount() + " live entries.");
             if (configManager.isDebug()) {
@@ -168,6 +174,18 @@ public final class OakLog extends JavaPlugin {
 
     private void registerCommands() {
         new OakLogCommand(this, iconRenderer).register();
+    }
+
+    private void initializeMetrics() {
+        new Metrics(this, BSTATS_PLUGIN_ID);
+    }
+
+    private void registerPlaceholders() {
+        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") == null) {
+            return;
+        }
+        new OakLogPlaceholders(this).register();
+        getLogger().info("PlaceholderAPI expansion registered.");
     }
 
     public boolean reload() {
