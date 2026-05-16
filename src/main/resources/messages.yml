@@ -131,6 +131,25 @@ commands:
   # Placeholders: <set>
   unknown-set: "<#6C757D>[<#C27B6B>ᴇʀʀᴏʀ<#6C757D>] <#C27B6B>Unknown set: <#FCD472><set><#C27B6B>."
 
+  # Simple reload (no count tracking)
+  reload-success-simple: "<#6C757D>[<#6B7A5E>ʟᴏɢ<#6C757D>] <#f2ebd7>Configuration <#8FAA87>reloaded<#f2ebd7>."
+
+  # Toast preference confirmations
+  toast-set-on: "<#6C757D>[<#6B7A5E>ʟᴏɢ<#6C757D>] <#f2ebd7>Toast notifications <#8FAA87>enabled<#f2ebd7>."
+  toast-set-off: "<#6C757D>[<#6B7A5E>ʟᴏɢ<#6C757D>] <#f2ebd7>Toast notifications <#C27B6B>disabled<#f2ebd7>."
+  toast-set-milestones: "<#6C757D>[<#6B7A5E>ʟᴏɢ<#6C757D>] <#f2ebd7>Toast notifications set to <#FCD472>milestones only<#f2ebd7>."
+
+  # Grant/revoke results
+  grant-entry-success: "<#6C757D>[<#6B7A5E>ʟᴏɢ<#6C757D>] <#f2ebd7>Granted <#FCD472><entry><#f2ebd7> to <#FCD472><player><#f2ebd7>."
+  grant-bulk-success: "<#6C757D>[<#6B7A5E>ʟᴏɢ<#6C757D>] <#f2ebd7>Granted <#FCD472><count><#f2ebd7> entries to <#FCD472><player><#f2ebd7> (<#FCD472><scope><#f2ebd7>)."
+  revoke-entry-success: "<#6C757D>[<#6B7A5E>ʟᴏɢ<#6C757D>] <#f2ebd7>Revoked <#FCD472><entry><#f2ebd7> from <#FCD472><player><#f2ebd7>."
+  revoke-bulk-success: "<#6C757D>[<#6B7A5E>ʟᴏɢ<#6C757D>] <#f2ebd7>Revoked <#FCD472><count><#f2ebd7> entries from <#FCD472><player><#f2ebd7> (<#FCD472><scope><#f2ebd7>)."
+  revoke-all-success: "<#6C757D>[<#6B7A5E>ʟᴏɢ<#6C757D>] <#f2ebd7>Wiped <#FCD472><count><#f2ebd7> entries from <#FCD472><player><#f2ebd7>."
+  revoke-confirm-required: "<#6C757D>[<#C27B6B>ᴇʀʀᴏʀ<#6C757D>] <#C27B6B>Wiping all entries from <#FCD472><player><#C27B6B> requires <#FCD472>/oaklog revoke <player> all confirm<#C27B6B>."
+
+  # Info command output
+  info-line: "<#6C757D>[<#6B7A5E>ʟᴏɢ<#6C757D>] <#FCD472><display><#6C757D> · <#f2ebd7>id=<#FCD472><entry><#f2ebd7> category=<#FCD472><category><#f2ebd7> status=<#FCD472><status><#f2ebd7> sets=<#FCD472><sets>"
+
   # Player help
   help-header: "<#6C757D>═══════ <#6B7A5E>OakLog <#6C757D>═══════"
   help-open: "<#FCD472>/oaklog <#6C757D>- <#f2ebd7>Open your collection log"

@@ -2,6 +2,7 @@ package dev.oakheart.oaklog;
 
 import dev.oakheart.message.MessageManager;
 import dev.oakheart.oaklog.config.ConfigManager;
+import dev.oakheart.oaklog.audit.AuditLog;
 import dev.oakheart.oaklog.commands.OakLogCommand;
 import dev.oakheart.oaklog.config.SetsConfig;
 import dev.oakheart.oaklog.detection.BiomeListener;
@@ -46,6 +47,7 @@ public final class OakLog extends JavaPlugin {
     private SetComputer setComputer;
     private LeaderboardManager leaderboardManager;
     private BiomeListener biomeListener;
+    private AuditLog auditLog;
     private DateFormat dateFormat;
     private IconRenderer iconRenderer;
 
@@ -122,6 +124,7 @@ public final class OakLog extends JavaPlugin {
                 configManager.getLeaderboardTopSize(), configManager.getLeaderboardRefreshSeconds());
         dateFormat = new DateFormat(configManager);
         iconRenderer = new IconRenderer(messageManager, dateFormat);
+        auditLog = new AuditLog(this);
     }
 
     private void syncRegistry() {
@@ -219,6 +222,10 @@ public final class OakLog extends JavaPlugin {
 
     public LeaderboardManager getLeaderboardManager() {
         return leaderboardManager;
+    }
+
+    public AuditLog getAuditLog() {
+        return auditLog;
     }
 
     public void debug(String message) {

@@ -36,4 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Structure detection on chunk boundary crossing — `world.getStructures(chunk)` is consulted and every generated structure in the entered chunk is recorded
 - Effect detection via `EntityPotionEffectEvent` (covers potions, splash, lingering, beacon, conduit, suspicious stew, area-effect clouds)
 - Enchantment detection on `PlayerInventorySlotChangeEvent` — both applied enchantments and enchanted-book stored enchantments are recognised
+- Full Brigadier command tree:
+  - `/oaklog toast <on|off|milestones>` — toggle personal toast preference (defers to the BetterGUI-driven settings menu via `oaklog.toast` permission)
+  - `/oaklog grant <player> <entry|category|set|all>` — admin grants; entry suggestions auto-complete from the in-memory registry (capped at 50)
+  - `/oaklog revoke <player> <entry|category|set|all confirm>` — wiping all entries requires the literal `confirm` token
+  - `/oaklog reload` — re-reads config.yml, messages.yml, biome-groups.yml, sets.yml, custom-entries.yml and re-runs the registry sync
+  - `/oaklog info <entry>` — show entry id, display name, category, set memberships, and live/retired status
+- Date-rotated audit log at `plugins/OakLog/audit-YYYY-MM-DD.log` writes one line per grant/revoke/reload action async; console gets a one-line summary
 - `biome-groups.yml` for organizing biomes by dimension and climate in the upcoming Biomes tab
