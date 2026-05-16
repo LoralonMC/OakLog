@@ -4,6 +4,8 @@ import dev.oakheart.oaklog.config.ConfigManager;
 import dev.oakheart.oaklog.model.Category;
 import dev.oakheart.oaklog.model.EntryDescriptor;
 import dev.oakheart.oaklog.util.EntryKey;
+import dev.oakheart.oaklog.variants.VariantResolver;
+import dev.oakheart.oaklog.variants.VariantResolvers;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.Material;
@@ -25,9 +27,11 @@ import java.util.Set;
 public class VanillaEnumerator {
 
     private final ConfigManager configManager;
+    private final VariantResolvers variantResolvers;
 
-    public VanillaEnumerator(ConfigManager configManager) {
+    public VanillaEnumerator(ConfigManager configManager, VariantResolvers variantResolvers) {
         this.configManager = configManager;
+        this.variantResolvers = variantResolvers;
     }
 
     public List<EntryDescriptor> enumerate() {
@@ -79,18 +83,36 @@ public class VanillaEnumerator {
             if (!isCollectableEntity(type)) continue;
 
             String keyName = type.getKey().getKey();
-            String display = EntryKey.displayNameFromKey(keyName);
-            String icon = pickEntityIcon(type);
+            String baseDisplay = EntryKey.displayNameFromKey(keyName);
+            String baseIcon = pickEntityIcon(type);
 
-            out.add(new EntryDescriptor(
-                    EntryKey.VANILLA,
-                    keyName,
-                    Category.ENTITIES,
-                    display,
-                    icon,
-                    null,
-                    null
-            ));
+            VariantResolver resolver = variantResolvers.get(type);
+            if (resolver == null) {
+                out.add(new EntryDescriptor(
+                        EntryKey.VANILLA,
+                        keyName,
+                        Category.ENTITIES,
+                        baseDisplay,
+                        baseIcon,
+                        null,
+                        null
+                ));
+                continue;
+            }
+
+            for (String variantKey : resolver.variantKeys()) {
+                String suffix = resolver.displayName(variantKey);
+                String iconOverride = resolver.iconMaterial(variantKey);
+                out.add(new EntryDescriptor(
+                        EntryKey.VANILLA,
+                        keyName + "_" + variantKey,
+                        Category.ENTITIES,
+                        suffix + " " + baseDisplay,
+                        iconOverride != null ? iconOverride : baseIcon,
+                        null,
+                        null
+                ));
+            }
         }
     }
 

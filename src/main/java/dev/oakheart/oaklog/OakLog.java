@@ -7,6 +7,7 @@ import dev.oakheart.oaklog.enumeration.VanillaEnumerator;
 import dev.oakheart.oaklog.registry.EntryRegistry;
 import dev.oakheart.oaklog.registry.RegistrySync;
 import dev.oakheart.oaklog.storage.SqliteStore;
+import dev.oakheart.oaklog.variants.VariantResolvers;
 import dev.oakheart.util.DebugLogger;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -19,6 +20,7 @@ public final class OakLog extends JavaPlugin {
     private DebugLogger debugLogger;
     private SqliteStore dataStore;
     private BiomeGrouping biomeGrouping;
+    private VariantResolvers variantResolvers;
     private VanillaEnumerator vanillaEnumerator;
     private EntryRegistry entryRegistry;
     private RegistrySync registrySync;
@@ -64,7 +66,8 @@ public final class OakLog extends JavaPlugin {
         biomeGrouping = new BiomeGrouping(this);
         biomeGrouping.load();
 
-        vanillaEnumerator = new VanillaEnumerator(configManager);
+        variantResolvers = new VariantResolvers();
+        vanillaEnumerator = new VanillaEnumerator(configManager, variantResolvers);
         entryRegistry = new EntryRegistry();
         registrySync = new RegistrySync(dataStore, entryRegistry, vanillaEnumerator, getLogger());
     }
@@ -113,6 +116,10 @@ public final class OakLog extends JavaPlugin {
 
     public RegistrySync getRegistrySync() {
         return registrySync;
+    }
+
+    public VariantResolvers getVariantResolvers() {
+        return variantResolvers;
     }
 
     public void debug(String message) {
