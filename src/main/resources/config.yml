@@ -1,0 +1,129 @@
+# OakLog Configuration
+# ========================
+#
+# ============================================================
+# PLACEHOLDERAPI PLACEHOLDERS
+# ============================================================
+# If PlaceholderAPI is installed, the following placeholders are available:
+#
+#   %oaklog_total_collected%        - Number of entries the player has collected
+#   %oaklog_total_entries%          - Total live (non-retired) entries
+#   %oaklog_total_percent%          - Player's overall completion as a percentage (e.g., "37.4")
+#   %oaklog_progress_<category>%    - "23/156" for the given category (blocks, items, entities, biomes, structures, effects, enchantments)
+#   %oaklog_percent_<category>%     - Completion percentage for the given category
+#   %oaklog_toast_state%            - "on", "off", or "milestones"
+#   %oaklog_rank%                   - Player's leaderboard rank across all entries (1-based)
+#
+# Useful for custom menus (e.g., BetterGUI) to display log stats or build toggle buttons.
+
+# ============================================================
+# GENERAL SETTINGS
+# ============================================================
+
+# Debug mode - logs detection events to console
+debug: false
+
+# Command alias registered alongside /oaklog (set to "" to disable)
+command-alias: 'log'
+
+# ============================================================
+# DETECTION
+# ============================================================
+
+detection:
+  # How often (in ticks) to check the player's current biome. 20 ticks = 1 second.
+  biome-check-interval: 20
+
+  # Whether to detect structures the player walks into. Polled on chunk-change events.
+  structure-check-on-chunk-change: true
+
+  # Materials that should NOT be trackable as Items or Blocks (creative-only or unobtainable).
+  # Remove an entry to make it trackable. These materials are skipped entirely - they won't
+  # appear in the log at all.
+  excluded-items:
+    - bedrock
+    - command_block
+    - chain_command_block
+    - repeating_command_block
+    - structure_block
+    - structure_void
+    - jigsaw
+    - debug_stick
+    - knowledge_book
+    - barrier
+    - light
+
+# ============================================================
+# STORAGE
+# ============================================================
+
+storage:
+  # SQLite database filename (relative to the plugin folder)
+  filename: 'oaklog.db'
+
+  # How often (in ticks) to flush pending collected rows to disk
+  flush-interval-ticks: 200
+
+  # Evict per-player cached progress on quit. Set to false to keep progress in memory
+  # for the full server lifetime (uses more RAM but faster reconnects).
+  cache-evict-on-quit: true
+
+# ============================================================
+# TOASTS
+# ============================================================
+
+toasts:
+  # Default toast state for new players. Existing players keep their setting.
+  # Options: on, off, milestones
+  default-state: 'off'
+
+  milestones:
+    # Send a milestone toast every N entries collected in a category
+    every-n-entries: 25
+
+    # Send a toast when a Set is fully collected
+    on-set-complete: true
+
+    # Send a toast when an entire category is fully collected
+    on-category-complete: true
+
+    # Send a toast when the entire log is fully collected
+    on-full-log-complete: true
+
+# ============================================================
+# SEARCH
+# ============================================================
+
+search:
+  # How players enter a search query. Options: anvil, sign, chat
+  input: anvil
+
+  # Maximum number of results shown
+  max-results: 36
+
+# ============================================================
+# LEADERBOARD
+# ============================================================
+
+leaderboard:
+  # How often (in seconds) to recompute leaderboard rankings from the database
+  refresh-interval-seconds: 60
+
+  # Number of top players to show
+  top-size: 10
+
+# ============================================================
+# DATE FORMATTING
+# ============================================================
+
+# Date format used when showing "collected on" timestamps in the GUI
+date-format: 'yyyy-MM-dd HH:mm'
+
+# Timezone for date display. Use "system" for the server's local timezone, or a
+# ZoneId like "America/New_York" or "UTC"
+date-timezone: 'system'
+
+# ========================================
+#          DO NOT EDIT BELOW
+# ========================================
+config-version: 1

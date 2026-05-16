@@ -1,0 +1,55 @@
+name: OakLog
+version: '${version}'
+main: dev.oakheart.oaklog.OakLog
+description: 'Per-player collection log for blocks, items, entities, biomes, structures, effects, and enchantments.'
+api-version: '1.21.10'
+authors:
+  - Loralon
+website: https://github.com/LoralonMC/OakLog
+dependencies:
+  server:
+    PlaceholderAPI:
+      load: BEFORE
+      required: false
+    Nexo:
+      load: BEFORE
+      required: false
+    ExecutableItems:
+      load: BEFORE
+      required: false
+    packetevents:
+      load: BEFORE
+      required: false
+permissions:
+  oaklog.*:
+    description: 'Grants all OakLog permissions'
+    default: op
+    children:
+      oaklog.use: true
+      oaklog.view-others: true
+      oaklog.toast: true
+      oaklog.admin.grant: true
+      oaklog.admin.revoke: true
+      oaklog.admin.reload: true
+      oaklog.admin.info: true
+  oaklog.use:
+    description: 'Allows players to open their own collection log'
+    default: true
+  oaklog.view-others:
+    description: "Allows players to view another player's collection log (read-only)"
+    default: true
+  oaklog.toast:
+    description: 'Allows players to toggle their personal toast notifications'
+    default: true
+  oaklog.admin.grant:
+    description: 'Allows granting collection entries to players'
+    default: op
+  oaklog.admin.revoke:
+    description: 'Allows revoking collection entries from players'
+    default: op
+  oaklog.admin.reload:
+    description: 'Allows reloading OakLog configuration and resyncing the registry'
+    default: op
+  oaklog.admin.info:
+    description: 'Allows inspecting collection entry details'
+    default: op

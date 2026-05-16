@@ -1,0 +1,75 @@
+# OakLog Messages
+# ========================
+# All messages use MiniMessage format: https://docs.advntr.dev/minimessage/format.html
+# Set any message to "" to disable it
+#
+# Gameplay messages have text/display structure:
+#   display options: chat, action_bar, title, none
+#
+# Command messages are flat strings under commands: (always sent via chat)
+#
+# Placeholders are listed in comments above each message
+
+# ============================================================
+# GAMEPLAY MESSAGES
+# ============================================================
+
+# Shown when a player collects a new entry (the primary notification)
+# Placeholders: <entry>, <category>
+collected-entry:
+  text: "<#6C757D>[<#6B7A5E>ʟᴏɢ<#6C757D>] <#f2ebd7>Collected: <#FCD472><entry>"
+  display: action_bar
+
+# Shown when a player completes an entire Set
+# Placeholders: <set>
+set-complete:
+  text: "<#6C757D>[<#6B7A5E>ʟᴏɢ<#6C757D>] <#f2ebd7>Set <#FCD472><set><#f2ebd7> <#8FAA87>complete<#f2ebd7>!"
+  display: chat
+
+# Shown when a player completes an entire category
+# Placeholders: <category>
+category-complete:
+  text: "<#6C757D>[<#6B7A5E>ʟᴏɢ<#6C757D>] <#f2ebd7>Category <#FCD472><category><#f2ebd7> <#8FAA87>complete<#f2ebd7>!"
+  display: chat
+
+# Shown when a player completes the entire log
+full-log-complete:
+  text: "<#6C757D>[<#6B7A5E>ʟᴏɢ<#6C757D>] <#f2ebd7>You have completed the entire <#FCD472>Collection Log<#f2ebd7>!"
+  display: chat
+
+# ============================================================
+# COMMAND MESSAGES
+# ============================================================
+
+commands:
+  # Shown when configuration is reloaded successfully
+  # Placeholders: <added>, <retired>
+  reload-success: "<#6C757D>[<#6B7A5E>ʟᴏɢ<#6C757D>] <#f2ebd7>Configuration <#8FAA87>reloaded<#f2ebd7>. <#FCD472><added><#f2ebd7> new entries, <#FCD472><retired><#f2ebd7> retired."
+
+  # Shown when configuration reload fails
+  reload-failed: "<#6C757D>[<#C27B6B>ᴇʀʀᴏʀ<#6C757D>] <#C27B6B>Configuration reload failed! Check console for details."
+
+  # Shown when player lacks permission
+  no-permission: "<#6C757D>[<#C27B6B>ᴇʀʀᴏʀ<#6C757D>] <#C27B6B>You don't have permission to use this command."
+
+  # Shown when target player is not found
+  player-not-found: "<#6C757D>[<#C27B6B>ᴇʀʀᴏʀ<#6C757D>] <#C27B6B>Player not found."
+
+  # Shown for unknown entry id
+  # Placeholders: <entry>
+  unknown-entry: "<#6C757D>[<#C27B6B>ᴇʀʀᴏʀ<#6C757D>] <#C27B6B>Unknown entry: <#FCD472><entry><#C27B6B>."
+
+  # Shown for unknown category
+  # Placeholders: <category>
+  unknown-category: "<#6C757D>[<#C27B6B>ᴇʀʀᴏʀ<#6C757D>] <#C27B6B>Unknown category: <#FCD472><category><#C27B6B>."
+
+  # Shown for unknown set
+  # Placeholders: <set>
+  unknown-set: "<#6C757D>[<#C27B6B>ᴇʀʀᴏʀ<#6C757D>] <#C27B6B>Unknown set: <#FCD472><set><#C27B6B>."
+
+  # Player help
+  help-header: "<#6C757D>═══════ <#6B7A5E>OakLog <#6C757D>═══════"
+  help-open: "<#FCD472>/oaklog <#6C757D>- <#f2ebd7>Open your collection log"
+  help-view-other: "<#FCD472>/oaklog <player> <#6C757D>- <#f2ebd7>View another player's log"
+  help-search: "<#FCD472>/oaklog search <query> <#6C757D>- <#f2ebd7>Search for entries"
+  help-toast: "<#FCD472>/oaklog toast <on|off|milestones> <#6C757D>- <#f2ebd7>Toggle toast notifications"
