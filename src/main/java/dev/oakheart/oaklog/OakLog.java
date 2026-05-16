@@ -3,6 +3,7 @@ package dev.oakheart.oaklog;
 import dev.oakheart.message.MessageManager;
 import dev.oakheart.oaklog.config.ConfigManager;
 import dev.oakheart.oaklog.audit.AuditLog;
+import dev.oakheart.oaklog.toast.ToastService;
 import dev.oakheart.oaklog.commands.OakLogCommand;
 import dev.oakheart.oaklog.config.SetsConfig;
 import dev.oakheart.oaklog.detection.BiomeListener;
@@ -48,6 +49,7 @@ public final class OakLog extends JavaPlugin {
     private LeaderboardManager leaderboardManager;
     private BiomeListener biomeListener;
     private AuditLog auditLog;
+    private ToastService toastService;
     private DateFormat dateFormat;
     private IconRenderer iconRenderer;
 
@@ -125,6 +127,9 @@ public final class OakLog extends JavaPlugin {
         dateFormat = new DateFormat(configManager);
         iconRenderer = new IconRenderer(messageManager, dateFormat);
         auditLog = new AuditLog(this);
+
+        toastService = new ToastService(this, configManager, entryRegistry);
+        toastService.initialize();
     }
 
     private void syncRegistry() {
@@ -144,6 +149,7 @@ public final class OakLog extends JavaPlugin {
         getServer().getPluginManager().registerEvents(
                 new StructureListener(configManager, entryRegistry, progressManager), this);
         getServer().getPluginManager().registerEvents(new GuiListener(), this);
+        getServer().getPluginManager().registerEvents(toastService, this);
 
         biomeListener = new BiomeListener(this, configManager, entryRegistry, progressManager);
     }
@@ -226,6 +232,10 @@ public final class OakLog extends JavaPlugin {
 
     public AuditLog getAuditLog() {
         return auditLog;
+    }
+
+    public ToastService getToastService() {
+        return toastService;
     }
 
     public void debug(String message) {

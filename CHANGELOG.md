@@ -43,4 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `/oaklog reload` — re-reads config.yml, messages.yml, biome-groups.yml, sets.yml, custom-entries.yml and re-runs the registry sync
   - `/oaklog info <entry>` — show entry id, display name, category, set memberships, and live/retired status
 - Date-rotated audit log at `plugins/OakLog/audit-YYYY-MM-DD.log` writes one line per grant/revoke/reload action async; console gets a one-line summary
+- PacketEvents-driven toast notifications: ToastService listens to ProgressEvent and dispatches a synthetic advancement packet that renders as a toast in the top-right of the screen. The packet is cleaned up 2 ticks later so the synthetic advancement doesn't pollute the player's advancement screen
+- Toast frames escalate: per-entry collection = TASK, milestone (every N entries) = GOAL, category completion + full log completion = CHALLENGE
+- Toast preference (`on`/`off`/`milestones`) per player, default `off` (configurable via `toasts.default-state`)
+- Graceful no-op + one-time warning if PacketEvents isn't installed
 - `biome-groups.yml` for organizing biomes by dimension and climate in the upcoming Biomes tab
