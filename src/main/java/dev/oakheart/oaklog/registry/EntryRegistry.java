@@ -9,8 +9,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class EntryRegistry {
 
@@ -18,6 +20,8 @@ public class EntryRegistry {
     private final Map<String, Integer> entryIdByNamespacedKey = new HashMap<>();
     private final Map<Material, Integer> entryIdByVanillaMaterial = new HashMap<>();
     private final EnumMap<Category, List<Integer>> entryIdsByCategory = new EnumMap<>(Category.class);
+    private final Map<Integer, Set<String>> setsByEntryId = new HashMap<>();
+    private final Map<String, List<Integer>> entriesBySetId = new HashMap<>();
     private int liveCount;
 
     public synchronized void replaceAll(List<Entry> entries) {
@@ -100,5 +104,36 @@ public class EntryRegistry {
             if (e != null && !e.isRetired()) count++;
         }
         return count;
+    }
+
+    public synchronized void replaceSets(Map<Integer, Set<String>> memberships) {
+        setsByEntryId.clear();
+        entriesBySetId.clear();
+        for (Map.Entry<Integer, Set<String>> e : memberships.entrySet()) {
+            int entryId = e.getKey();
+            Set<String> sets = Set.copyOf(e.getValue());
+            setsByEntryId.put(entryId, sets);
+            for (String setId : sets) {
+                entriesBySetId.computeIfAbsent(setId, k -> new ArrayList<>()).add(entryId);
+            }
+        }
+    }
+
+    public synchronized Set<String> setsFor(int entryId) {
+        return setsByEntryId.getOrDefault(entryId, Set.of());
+    }
+
+    public synchronized List<Integer> entriesInSet(String setId) {
+        return List.copyOf(entriesBySetId.getOrDefault(setId, List.of()));
+    }
+
+    public synchronized List<Entry> entriesInSetResolved(String setId) {
+        List<Integer> ids = entriesBySetId.getOrDefault(setId, List.of());
+        List<Entry> out = new ArrayList<>(ids.size());
+        for (int id : ids) {
+            Entry e = entriesById.get(id);
+            if (e != null && !e.isRetired()) out.add(e);
+        }
+        return out;
     }
 }

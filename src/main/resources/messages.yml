@@ -71,12 +71,32 @@ gui:
     leaderboard: "<#FCD472>Leaderboard"
     close: "<#C27B6B>Close"
     back: "<#FCD472>◀ Back"
+    back-to-hub: "<#FCD472>◀ Back to Log"
     next-page: "<#FCD472>Next Page ▶"
     prev-page: "<#FCD472>◀ Previous Page"
     page-indicator: "<#f2ebd7>Page <#FCD472><page><#6C757D>/<#FCD472><total_pages>"
     filter-all: "<#f2ebd7>Filter: <#FCD472>All"
     filter-collected: "<#f2ebd7>Filter: <#8FAA87>Collected"
     filter-uncollected: "<#f2ebd7>Filter: <#C27B6B>Uncollected"
+
+  recent:
+    title: "<#6B7A5E>Collection Log <#6C757D>· <#f2ebd7>Recent Activity"
+
+  sets:
+    title: "<#6B7A5E>Collection Log <#6C757D>· <#f2ebd7>Sets"
+    set-name: "<#FCD472><set>"
+    set-lore: "<#f2ebd7>Progress: <#FCD472><collected><#6C757D>/<#FCD472><total> <#6C757D>(<#8FAA87><percent>%<#6C757D>)"
+
+  set:
+    title: "<#6B7A5E>Set <#6C757D>· <#f2ebd7><set>"
+
+  leaderboard:
+    title: "<#6B7A5E>Collection Log <#6C757D>· <#f2ebd7>Leaderboard"
+    tab-total: "<#FCD472>Total"
+    tab: "<#f2ebd7><category>"
+    tab-active: "<#8FAA87>▶ <category>"
+    entry-name: "<#FCD472>#<rank><#6C757D> · <#f2ebd7><player>"
+    entry-lore: "<#f2ebd7>Collected: <#FCD472><collected><#6C757D>/<#FCD472><total> <#6C757D>(<#8FAA87><percent>%<#6C757D>)"
 
 # ============================================================
 # COMMAND MESSAGES

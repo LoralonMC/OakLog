@@ -26,4 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Custom item adapter framework: `EntryAdapter` interface + `AdapterRegistry` enumerate-and-detect chain
 - `PdcAdapter` reads `custom-entries.yml` for admin-defined items keyed by PersistentDataContainer (covers Nexo's `nexo:id`, ExecutableItems' `executableitems:executableitem_id`, OakTools, or any other PDC-keyed custom items)
 - ItemBlockListener checks adapter detection first (custom items take precedence) before falling back to the vanilla material fast path
+- `sets.yml` defines orthogonal collection sets via pattern matchers (vanilla materials, entry-key globs, Nexo IDs, ExecutableItems IDs). Set memberships recomputed on every registry sync
+- Sets overview GUI with completion meter per set + dedicated Set view showing all entries in a single set
+- Recent activity GUI showing the most recent collections (per-player) sorted by collection timestamp
+- Leaderboard GUI showing top players globally and per-category, with the viewing player's rank pinned at the bottom
+- LeaderboardManager with async refresh every `leaderboard.refresh-interval-seconds`
 - `biome-groups.yml` for organizing biomes by dimension and climate in the upcoming Biomes tab

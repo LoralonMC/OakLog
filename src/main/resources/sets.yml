@@ -1,0 +1,46 @@
+# ============================================================
+# COLLECTION SETS
+# ============================================================
+# Sets group entries into orthogonal collections. Each set has its
+# own completion meter and shows up on the Sets overview page.
+# A set marked `tab: true` is promoted to a sub-tab inside its
+# parent category in the GUI.
+#
+# Match rules (combine freely; an entry that matches ANY rule joins
+# the set):
+#   vanilla-materials: list of vanilla Material names (lowercase)
+#   entry-keys:        list of namespace:key globs (e.g. 'nexo:plushie_*')
+#   nexo-ids:          list of Nexo item ids (glob OK); resolved to
+#                       entry-keys with the 'nexo:' prefix
+#   executable-items:  list of ExecutableItems ids (glob OK)
+#
+# Top-level keys are set ids (lowercase, used internally).
+# `name:` is the display name shown to players.
+#
+# Example sets (commented out — uncomment and adjust):
+#
+# plushies:
+#   name: 'Plushies'
+#   category: items
+#   tab: true
+#   match:
+#     nexo-ids: ['plushie_*']
+#
+# trading-cards:
+#   name: 'Trading Cards'
+#   category: items
+#   tab: true
+#   match:
+#     entry-keys: ['nexo:card_*']
+#
+# music-discs:
+#   name: 'Music Discs'
+#   category: items
+#   match:
+#     entry-keys: ['minecraft:music_disc_*']
+#
+# wool-collection:
+#   name: 'Wool Colors'
+#   category: blocks
+#   match:
+#     entry-keys: ['minecraft:*_wool']

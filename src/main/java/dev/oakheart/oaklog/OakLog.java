@@ -3,11 +3,14 @@ package dev.oakheart.oaklog;
 import dev.oakheart.message.MessageManager;
 import dev.oakheart.oaklog.config.ConfigManager;
 import dev.oakheart.oaklog.commands.OakLogCommand;
+import dev.oakheart.oaklog.config.SetsConfig;
 import dev.oakheart.oaklog.detection.ItemBlockListener;
 import dev.oakheart.oaklog.enumeration.BiomeGrouping;
+import dev.oakheart.oaklog.enumeration.SetComputer;
 import dev.oakheart.oaklog.enumeration.VanillaEnumerator;
 import dev.oakheart.oaklog.integration.adapter.AdapterRegistry;
 import dev.oakheart.oaklog.integration.adapter.PdcAdapter;
+import dev.oakheart.oaklog.leaderboard.LeaderboardManager;
 import dev.oakheart.oaklog.progress.ProgressManager;
 import dev.oakheart.oaklog.registry.EntryRegistry;
 import dev.oakheart.oaklog.registry.RegistrySync;
@@ -34,6 +37,9 @@ public final class OakLog extends JavaPlugin {
     private RegistrySync registrySync;
     private ProgressManager progressManager;
     private AdapterRegistry adapterRegistry;
+    private SetsConfig setsConfig;
+    private SetComputer setComputer;
+    private LeaderboardManager leaderboardManager;
     private DateFormat dateFormat;
     private IconRenderer iconRenderer;
 
@@ -45,6 +51,7 @@ public final class OakLog extends JavaPlugin {
             registerListeners();
             registerCommands();
             progressManager.start();
+            leaderboardManager.start();
 
             getLogger().info("OakLog enabled with " + entryRegistry.liveCount() + " live entries.");
             if (configManager.isDebug()) {
@@ -58,6 +65,9 @@ public final class OakLog extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (leaderboardManager != null) {
+            leaderboardManager.shutdown();
+        }
         if (progressManager != null) {
             progressManager.shutdown();
         }
@@ -91,9 +101,15 @@ public final class OakLog extends JavaPlugin {
         adapterRegistry = new AdapterRegistry(getLogger());
         adapterRegistry.register(new PdcAdapter(this));
 
+        setsConfig = new SetsConfig(this);
+        setsConfig.load();
+        setComputer = new SetComputer(dataStore, entryRegistry);
+
         registrySync = new RegistrySync(dataStore, entryRegistry, vanillaEnumerator,
-                adapterRegistry, getLogger());
+                adapterRegistry, setsConfig, setComputer, getLogger());
         progressManager = new ProgressManager(this, configManager, dataStore, entryRegistry);
+        leaderboardManager = new LeaderboardManager(this, dataStore,
+                configManager.getLeaderboardTopSize(), configManager.getLeaderboardRefreshSeconds());
         dateFormat = new DateFormat(configManager);
         iconRenderer = new IconRenderer(messageManager, dateFormat);
     }
@@ -119,7 +135,9 @@ public final class OakLog extends JavaPlugin {
         }
         messageManager.reload();
         biomeGrouping.reload();
+        setsConfig.reload();
         registrySync.run();
+        leaderboardManager.invalidate();
 
         if (configManager.isDebug()) {
             getLogger().info("Debug mode is enabled.");
@@ -173,6 +191,14 @@ public final class OakLog extends JavaPlugin {
 
     public AdapterRegistry getAdapterRegistry() {
         return adapterRegistry;
+    }
+
+    public SetsConfig getSetsConfig() {
+        return setsConfig;
+    }
+
+    public LeaderboardManager getLeaderboardManager() {
+        return leaderboardManager;
     }
 
     public void debug(String message) {

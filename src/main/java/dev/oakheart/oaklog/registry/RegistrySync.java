@@ -1,5 +1,7 @@
 package dev.oakheart.oaklog.registry;
 
+import dev.oakheart.oaklog.config.SetsConfig;
+import dev.oakheart.oaklog.enumeration.SetComputer;
 import dev.oakheart.oaklog.enumeration.VanillaEnumerator;
 import dev.oakheart.oaklog.integration.adapter.AdapterRegistry;
 import dev.oakheart.oaklog.model.Entry;
@@ -21,15 +23,21 @@ public class RegistrySync {
     private final EntryRegistry registry;
     private final VanillaEnumerator vanillaEnumerator;
     private final AdapterRegistry adapterRegistry;
+    private final SetsConfig setsConfig;
+    private final SetComputer setComputer;
     private final Logger logger;
 
     public RegistrySync(DataStore dataStore, EntryRegistry registry,
                         VanillaEnumerator vanillaEnumerator,
-                        AdapterRegistry adapterRegistry, Logger logger) {
+                        AdapterRegistry adapterRegistry,
+                        SetsConfig setsConfig, SetComputer setComputer,
+                        Logger logger) {
         this.dataStore = dataStore;
         this.registry = registry;
         this.vanillaEnumerator = vanillaEnumerator;
         this.adapterRegistry = adapterRegistry;
+        this.setsConfig = setsConfig;
+        this.setComputer = setComputer;
         this.logger = logger;
     }
 
@@ -90,12 +98,15 @@ public class RegistrySync {
         List<Entry> reloaded = dataStore.loadAllEntries();
         registry.replaceAll(reloaded);
 
+        // Recompute set memberships from the fresh registry
+        int memberships = setComputer.recompute(setsConfig.sets());
+
         SyncResult result = new SyncResult(inserted.size(), toRetire.size(),
                 toUnretire.size(), toUpdate.size(), reloaded.size());
         logger.info(String.format(
-                "Registry sync complete: %d added, %d retired, %d revived, %d updated, %d total entries (%d live)",
+                "Registry sync complete: %d added, %d retired, %d revived, %d updated, %d total entries (%d live), %d set memberships",
                 result.added, result.retired, result.revived, result.updated,
-                result.totalEntries, registry.liveCount()));
+                result.totalEntries, registry.liveCount(), memberships));
         return result;
     }
 

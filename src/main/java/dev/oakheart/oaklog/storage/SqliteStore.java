@@ -380,6 +380,130 @@ public class SqliteStore implements DataStore {
     }
 
     @Override
+    public synchronized void replaceEntrySets(Map<Integer, java.util.Set<String>> entryToSets) {
+        try {
+            Connection conn = getConnection();
+            boolean prevAutoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+
+            try (Statement stmt = conn.createStatement()) {
+                stmt.executeUpdate("DELETE FROM entry_sets");
+            }
+
+            String sql = "INSERT INTO entry_sets (entry_id, set_id) VALUES (?, ?)";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                for (Map.Entry<Integer, java.util.Set<String>> e : entryToSets.entrySet()) {
+                    int entryId = e.getKey();
+                    for (String setId : e.getValue()) {
+                        stmt.setInt(1, entryId);
+                        stmt.setString(2, setId);
+                        stmt.addBatch();
+                    }
+                }
+                stmt.executeBatch();
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(prevAutoCommit);
+            }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to replace entry_sets", e);
+        }
+    }
+
+    @Override
+    public synchronized Map<Integer, java.util.Set<String>> loadAllSetMemberships() {
+        Map<Integer, java.util.Set<String>> out = new HashMap<>();
+        try (Statement stmt = getConnection().createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT entry_id, set_id FROM entry_sets")) {
+            while (rs.next()) {
+                int entryId = rs.getInt("entry_id");
+                String setId = rs.getString("set_id");
+                out.computeIfAbsent(entryId, k -> new java.util.HashSet<>()).add(setId);
+            }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to load entry_sets", e);
+        }
+        return out;
+    }
+
+    @Override
+    public synchronized List<LeaderboardRow> topOverall(int limit) {
+        String sql = """
+                SELECT c.player_uuid AS uuid, COUNT(*) AS count
+                FROM collected c
+                JOIN entries e ON c.entry_id = e.id
+                WHERE e.retired_at IS NULL
+                GROUP BY c.player_uuid
+                ORDER BY count DESC
+                LIMIT ?
+                """;
+        return runLeaderboardQuery(sql, stmt -> stmt.setInt(1, limit));
+    }
+
+    @Override
+    public synchronized List<LeaderboardRow> topByCategory(dev.oakheart.oaklog.model.Category category, int limit) {
+        String sql = """
+                SELECT c.player_uuid AS uuid, COUNT(*) AS count
+                FROM collected c
+                JOIN entries e ON c.entry_id = e.id
+                WHERE e.retired_at IS NULL AND e.category = ?
+                GROUP BY c.player_uuid
+                ORDER BY count DESC
+                LIMIT ?
+                """;
+        return runLeaderboardQuery(sql, stmt -> {
+            stmt.setString(1, category.id());
+            stmt.setInt(2, limit);
+        });
+    }
+
+    @Override
+    public synchronized int collectedCountOverall(UUID playerUuid) {
+        String sql = """
+                SELECT COUNT(*) AS count
+                FROM collected c
+                JOIN entries e ON c.entry_id = e.id
+                WHERE c.player_uuid = ? AND e.retired_at IS NULL
+                """;
+        try {
+            PreparedStatement stmt = prepareCached(sql);
+            stmt.setString(1, playerUuid.toString());
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? rs.getInt("count") : 0;
+            }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to count collected for " + playerUuid, e);
+            return 0;
+        }
+    }
+
+    private List<LeaderboardRow> runLeaderboardQuery(String sql, StatementBinder binder) {
+        List<LeaderboardRow> rows = new ArrayList<>();
+        try {
+            PreparedStatement stmt = prepareCached(sql);
+            binder.bind(stmt);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    UUID uuid = UUID.fromString(rs.getString("uuid"));
+                    int count = rs.getInt("count");
+                    rows.add(new LeaderboardRow(uuid, count));
+                }
+            }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed leaderboard query", e);
+        }
+        return rows;
+    }
+
+    @FunctionalInterface
+    private interface StatementBinder {
+        void bind(PreparedStatement stmt) throws SQLException;
+    }
+
+    @Override
     public synchronized int deleteAllCollected(UUID playerUuid) {
         String sql = "DELETE FROM collected WHERE player_uuid = ?";
         try {

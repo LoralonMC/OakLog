@@ -82,4 +82,35 @@ public interface DataStore {
      * Deletes all collected rows for the given player.
      */
     int deleteAllCollected(UUID playerUuid);
+
+    // --- Set membership ---
+
+    /**
+     * Replaces the entry_sets table with the given memberships.
+     */
+    void replaceEntrySets(Map<Integer, java.util.Set<String>> entryToSets);
+
+    /**
+     * Loads every (entry_id, set_id) row for in-memory caching.
+     */
+    Map<Integer, java.util.Set<String>> loadAllSetMemberships();
+
+    // --- Leaderboard ---
+
+    /**
+     * Returns the top N players by total collected entries (live entries only).
+     */
+    List<LeaderboardRow> topOverall(int limit);
+
+    /**
+     * Returns the top N players by collected entries in a single category.
+     */
+    List<LeaderboardRow> topByCategory(dev.oakheart.oaklog.model.Category category, int limit);
+
+    /**
+     * Returns this player's collected count for live entries (all categories).
+     */
+    int collectedCountOverall(UUID playerUuid);
+
+    record LeaderboardRow(UUID playerUuid, int collectedCount) {}
 }

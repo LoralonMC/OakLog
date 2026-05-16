@@ -83,8 +83,20 @@ public class HubGui extends OakLogGui {
             return;
         }
 
-        if (slot == BTN_RECENT || slot == BTN_SETS || slot == BTN_SEARCH || slot == BTN_LEADERBOARD) {
-            viewer.sendMessage(net.kyori.adventure.text.Component.text("Coming soon!"));
+        if (slot == BTN_RECENT) {
+            new RecentGui(plugin, viewer, targetUuid, iconRenderer).open();
+            return;
+        }
+        if (slot == BTN_SETS) {
+            new SetsOverviewGui(plugin, viewer, targetUuid, iconRenderer).open();
+            return;
+        }
+        if (slot == BTN_LEADERBOARD) {
+            new LeaderboardGui(plugin, viewer, targetUuid, iconRenderer).open();
+            return;
+        }
+        if (slot == BTN_SEARCH) {
+            viewer.sendMessage(net.kyori.adventure.text.Component.text("Search coming in a future phase!"));
         }
     }
 
