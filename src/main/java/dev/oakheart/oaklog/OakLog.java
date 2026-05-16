@@ -2,6 +2,10 @@ package dev.oakheart.oaklog;
 
 import dev.oakheart.message.MessageManager;
 import dev.oakheart.oaklog.config.ConfigManager;
+import dev.oakheart.oaklog.enumeration.BiomeGrouping;
+import dev.oakheart.oaklog.enumeration.VanillaEnumerator;
+import dev.oakheart.oaklog.registry.EntryRegistry;
+import dev.oakheart.oaklog.registry.RegistrySync;
 import dev.oakheart.oaklog.storage.SqliteStore;
 import dev.oakheart.util.DebugLogger;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -14,13 +18,18 @@ public final class OakLog extends JavaPlugin {
     private MessageManager messageManager;
     private DebugLogger debugLogger;
     private SqliteStore dataStore;
+    private BiomeGrouping biomeGrouping;
+    private VanillaEnumerator vanillaEnumerator;
+    private EntryRegistry entryRegistry;
+    private RegistrySync registrySync;
 
     @Override
     public void onEnable() {
         try {
             initializeComponents();
+            syncRegistry();
 
-            getLogger().info("OakLog enabled!");
+            getLogger().info("OakLog enabled with " + entryRegistry.liveCount() + " live entries.");
             if (configManager.isDebug()) {
                 getLogger().info("Debug mode is enabled.");
             }
@@ -51,6 +60,17 @@ public final class OakLog extends JavaPlugin {
         if (!dataStore.initialize()) {
             throw new IllegalStateException("Failed to initialize OakLog database. See log for details.");
         }
+
+        biomeGrouping = new BiomeGrouping(this);
+        biomeGrouping.load();
+
+        vanillaEnumerator = new VanillaEnumerator(configManager);
+        entryRegistry = new EntryRegistry();
+        registrySync = new RegistrySync(dataStore, entryRegistry, vanillaEnumerator, getLogger());
+    }
+
+    private void syncRegistry() {
+        registrySync.run();
     }
 
     public boolean reload() {
@@ -58,6 +78,8 @@ public final class OakLog extends JavaPlugin {
             return false;
         }
         messageManager.reload();
+        biomeGrouping.reload();
+        registrySync.run();
 
         if (configManager.isDebug()) {
             getLogger().info("Debug mode is enabled.");
@@ -79,6 +101,18 @@ public final class OakLog extends JavaPlugin {
 
     public SqliteStore getDataStore() {
         return dataStore;
+    }
+
+    public BiomeGrouping getBiomeGrouping() {
+        return biomeGrouping;
+    }
+
+    public EntryRegistry getEntryRegistry() {
+        return entryRegistry;
+    }
+
+    public RegistrySync getRegistrySync() {
+        return registrySync;
     }
 
     public void debug(String message) {

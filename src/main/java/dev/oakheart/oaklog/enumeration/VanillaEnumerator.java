@@ -1,0 +1,196 @@
+package dev.oakheart.oaklog.enumeration;
+
+import dev.oakheart.oaklog.config.ConfigManager;
+import dev.oakheart.oaklog.model.Category;
+import dev.oakheart.oaklog.model.EntryDescriptor;
+import dev.oakheart.oaklog.util.EntryKey;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
+import org.bukkit.block.Biome;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.generator.structure.Structure;
+import org.bukkit.potion.PotionEffectType;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+
+public class VanillaEnumerator {
+
+    private final ConfigManager configManager;
+
+    public VanillaEnumerator(ConfigManager configManager) {
+        this.configManager = configManager;
+    }
+
+    public List<EntryDescriptor> enumerate() {
+        List<EntryDescriptor> all = new ArrayList<>();
+        Set<String> excluded = new HashSet<>();
+        for (String name : configManager.getExcludedItems()) {
+            excluded.add(name.toLowerCase(Locale.ROOT));
+        }
+
+        enumerateMaterials(all, excluded);
+        enumerateEntities(all);
+        enumerateBiomes(all);
+        enumerateStructures(all);
+        enumerateEffects(all);
+        enumerateEnchantments(all);
+
+        return all;
+    }
+
+    private void enumerateMaterials(List<EntryDescriptor> out, Set<String> excluded) {
+        for (Material material : Registry.MATERIAL) {
+            if (material.isAir()) continue;
+            if (material.isLegacy()) continue;
+
+            String keyName = material.getKey().getKey();
+            if (excluded.contains(keyName.toLowerCase(Locale.ROOT))) continue;
+
+            boolean isBlock = material.isBlock();
+            boolean isItem = material.isItem();
+
+            if (!isBlock && !isItem) continue;
+
+            Category category = isBlock ? Category.BLOCKS : Category.ITEMS;
+            String display = EntryKey.displayNameFromKey(keyName);
+            out.add(new EntryDescriptor(
+                    EntryKey.VANILLA,
+                    keyName,
+                    category,
+                    display,
+                    material.name(),
+                    null,
+                    null
+            ));
+        }
+    }
+
+    private void enumerateEntities(List<EntryDescriptor> out) {
+        for (EntityType type : Registry.ENTITY_TYPE) {
+            if (!isCollectableEntity(type)) continue;
+
+            String keyName = type.getKey().getKey();
+            String display = EntryKey.displayNameFromKey(keyName);
+            String icon = pickEntityIcon(type);
+
+            out.add(new EntryDescriptor(
+                    EntryKey.VANILLA,
+                    keyName,
+                    Category.ENTITIES,
+                    display,
+                    icon,
+                    null,
+                    null
+            ));
+        }
+    }
+
+    private void enumerateBiomes(List<EntryDescriptor> out) {
+        Registry<Biome> biomes = RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME);
+        for (Biome biome : biomes) {
+            NamespacedKey nk = biomes.getKey(biome);
+            if (nk == null) continue;
+            String display = EntryKey.displayNameFromKey(nk.getKey());
+
+            out.add(new EntryDescriptor(
+                    nk.getNamespace(),
+                    "biome_" + nk.getKey(),
+                    Category.BIOMES,
+                    display,
+                    "GRASS_BLOCK",
+                    null,
+                    null
+            ));
+        }
+    }
+
+    private void enumerateStructures(List<EntryDescriptor> out) {
+        Registry<Structure> structures = RegistryAccess.registryAccess().getRegistry(RegistryKey.STRUCTURE);
+        for (Structure structure : structures) {
+            NamespacedKey nk = structures.getKey(structure);
+            if (nk == null) continue;
+            String display = EntryKey.displayNameFromKey(nk.getKey());
+
+            out.add(new EntryDescriptor(
+                    nk.getNamespace(),
+                    "structure_" + nk.getKey(),
+                    Category.STRUCTURES,
+                    display,
+                    "COBBLESTONE",
+                    null,
+                    null
+            ));
+        }
+    }
+
+    private void enumerateEffects(List<EntryDescriptor> out) {
+        Registry<PotionEffectType> effects =
+                RegistryAccess.registryAccess().getRegistry(RegistryKey.MOB_EFFECT);
+        for (PotionEffectType effect : effects) {
+            NamespacedKey nk = effects.getKey(effect);
+            if (nk == null) continue;
+            String display = EntryKey.displayNameFromKey(nk.getKey());
+
+            out.add(new EntryDescriptor(
+                    nk.getNamespace(),
+                    "effect_" + nk.getKey(),
+                    Category.EFFECTS,
+                    display,
+                    "POTION",
+                    null,
+                    null
+            ));
+        }
+    }
+
+    private void enumerateEnchantments(List<EntryDescriptor> out) {
+        Registry<Enchantment> enchants =
+                RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT);
+        for (Enchantment ench : enchants) {
+            NamespacedKey nk = enchants.getKey(ench);
+            if (nk == null) continue;
+            String display = EntryKey.displayNameFromKey(nk.getKey());
+
+            out.add(new EntryDescriptor(
+                    nk.getNamespace(),
+                    "enchantment_" + nk.getKey(),
+                    Category.ENCHANTMENTS,
+                    display,
+                    "ENCHANTED_BOOK",
+                    null,
+                    null
+            ));
+        }
+    }
+
+    private static boolean isCollectableEntity(EntityType type) {
+        if (type == EntityType.PLAYER) return false;
+        if (type == EntityType.ARMOR_STAND) return false;
+        if (type == EntityType.PAINTING) return true;
+
+        Class<?> cls = type.getEntityClass();
+        return cls != null && LivingEntity.class.isAssignableFrom(cls);
+    }
+
+    private static String pickEntityIcon(EntityType type) {
+        // Try to use the matching spawn egg material; fall back to a sensible default.
+        String guess = type.name() + "_SPAWN_EGG";
+        try {
+            Material.valueOf(guess);
+            return guess;
+        } catch (IllegalArgumentException ignored) {
+            // fall through
+        }
+        if (type == EntityType.PAINTING) return "PAINTING";
+        return "BARRIER";
+    }
+}

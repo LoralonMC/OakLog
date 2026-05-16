@@ -1,0 +1,89 @@
+# ============================================================
+# BIOME GROUPING
+# ============================================================
+# Groups biomes by dimension and climate for display in the
+# Biomes category of the collection log.
+#
+# Biomes not listed here fall into 'overworld/other' for display.
+# All vanilla biomes are tracked regardless of whether they are
+# listed here — this file only controls grouping/ordering.
+#
+# Biome names use the lowercase form (e.g. 'plains', not 'PLAINS').
+# Modded biomes can be added with their namespace (e.g.
+# 'twilightforest:dense_forest') — the namespace is stripped on
+# lookup.
+
+overworld:
+  snowy:
+    - ice_spikes
+    - snowy_plains
+    - snowy_taiga
+    - snowy_beach
+    - snowy_slopes
+    - frozen_peaks
+    - frozen_river
+    - frozen_ocean
+    - deep_frozen_ocean
+    - grove
+    - jagged_peaks
+  cold:
+    - taiga
+    - old_growth_pine_taiga
+    - old_growth_spruce_taiga
+    - stony_shore
+    - windswept_hills
+    - windswept_gravelly_hills
+    - windswept_forest
+    - cold_ocean
+    - deep_cold_ocean
+  temperate:
+    - plains
+    - sunflower_plains
+    - meadow
+    - forest
+    - flower_forest
+    - birch_forest
+    - old_growth_birch_forest
+    - dark_forest
+    - pale_garden
+    - swamp
+    - river
+    - beach
+    - ocean
+    - deep_ocean
+    - lukewarm_ocean
+    - deep_lukewarm_ocean
+    - stony_peaks
+    - cherry_grove
+  warm:
+    - desert
+    - savanna
+    - savanna_plateau
+    - windswept_savanna
+    - jungle
+    - sparse_jungle
+    - bamboo_jungle
+    - badlands
+    - eroded_badlands
+    - wooded_badlands
+    - warm_ocean
+    - mangrove_swamp
+  underground:
+    - dripstone_caves
+    - lush_caves
+    - deep_dark
+
+nether:
+  - nether_wastes
+  - soul_sand_valley
+  - crimson_forest
+  - warped_forest
+  - basalt_deltas
+
+end:
+  - the_end
+  - end_highlands
+  - end_midlands
+  - small_end_islands
+  - end_barrens
+  - the_void

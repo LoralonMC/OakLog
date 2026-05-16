@@ -1,0 +1,104 @@
+package dev.oakheart.oaklog.registry;
+
+import dev.oakheart.oaklog.model.Category;
+import dev.oakheart.oaklog.model.Entry;
+import dev.oakheart.oaklog.util.EntryKey;
+import org.bukkit.Material;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class EntryRegistry {
+
+    private final Map<Integer, Entry> entriesById = new HashMap<>();
+    private final Map<String, Integer> entryIdByNamespacedKey = new HashMap<>();
+    private final Map<Material, Integer> entryIdByVanillaMaterial = new HashMap<>();
+    private final EnumMap<Category, List<Integer>> entryIdsByCategory = new EnumMap<>(Category.class);
+    private int liveCount;
+
+    public synchronized void replaceAll(List<Entry> entries) {
+        entriesById.clear();
+        entryIdByNamespacedKey.clear();
+        entryIdByVanillaMaterial.clear();
+        entryIdsByCategory.clear();
+        for (Category category : Category.values()) {
+            entryIdsByCategory.put(category, new ArrayList<>());
+        }
+
+        int live = 0;
+        for (Entry entry : entries) {
+            entriesById.put(entry.id(), entry);
+            entryIdByNamespacedKey.put(entry.namespacedKey(), entry.id());
+            entryIdsByCategory.get(entry.category()).add(entry.id());
+
+            if (!entry.isRetired()) {
+                live++;
+                if (EntryKey.VANILLA.equals(entry.namespace())) {
+                    indexVanillaMaterial(entry);
+                }
+            }
+        }
+        this.liveCount = live;
+    }
+
+    private void indexVanillaMaterial(Entry entry) {
+        if (entry.category() != Category.BLOCKS && entry.category() != Category.ITEMS) return;
+        try {
+            Material mat = Material.valueOf(entry.key().toUpperCase(java.util.Locale.ROOT));
+            entryIdByVanillaMaterial.put(mat, entry.id());
+        } catch (IllegalArgumentException ignored) {
+            // Material no longer exists (e.g. removed in a future Minecraft version)
+        }
+    }
+
+    public synchronized Entry get(int id) {
+        return entriesById.get(id);
+    }
+
+    public synchronized Integer idFor(String namespace, String key) {
+        return entryIdByNamespacedKey.get(EntryKey.join(namespace, key));
+    }
+
+    public synchronized Integer idFor(String namespacedKey) {
+        return entryIdByNamespacedKey.get(namespacedKey);
+    }
+
+    public synchronized Integer idForVanillaMaterial(Material material) {
+        return entryIdByVanillaMaterial.get(material);
+    }
+
+    public synchronized List<Entry> all() {
+        return List.copyOf(entriesById.values());
+    }
+
+    public synchronized List<Entry> byCategory(Category category) {
+        List<Integer> ids = entryIdsByCategory.getOrDefault(category, Collections.emptyList());
+        List<Entry> result = new ArrayList<>(ids.size());
+        for (int id : ids) {
+            Entry e = entriesById.get(id);
+            if (e != null) result.add(e);
+        }
+        return result;
+    }
+
+    public synchronized int liveCount() {
+        return liveCount;
+    }
+
+    public synchronized int totalCount() {
+        return entriesById.size();
+    }
+
+    public synchronized int liveCountFor(Category category) {
+        int count = 0;
+        for (int id : entryIdsByCategory.getOrDefault(category, Collections.emptyList())) {
+            Entry e = entriesById.get(id);
+            if (e != null && !e.isRetired()) count++;
+        }
+        return count;
+    }
+}
