@@ -11,3 +11,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial project skeleton (gradle build, paper-plugin.yml, config.yml, messages.yml)
 - Main class lifecycle with ConfigManager, MessageManager, and DebugLogger wired through OakheartLib
+- SQLite storage layer with WAL mode, prepared-statement cache, single-thread async executor, and schema version tracking

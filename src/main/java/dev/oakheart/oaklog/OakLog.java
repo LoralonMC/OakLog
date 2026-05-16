@@ -2,6 +2,7 @@ package dev.oakheart.oaklog;
 
 import dev.oakheart.message.MessageManager;
 import dev.oakheart.oaklog.config.ConfigManager;
+import dev.oakheart.oaklog.storage.SqliteStore;
 import dev.oakheart.util.DebugLogger;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -12,6 +13,7 @@ public final class OakLog extends JavaPlugin {
     private ConfigManager configManager;
     private MessageManager messageManager;
     private DebugLogger debugLogger;
+    private SqliteStore dataStore;
 
     @Override
     public void onEnable() {
@@ -30,6 +32,9 @@ public final class OakLog extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (dataStore != null) {
+            dataStore.close();
+        }
         getLogger().info("OakLog disabled.");
     }
 
@@ -41,6 +46,11 @@ public final class OakLog extends JavaPlugin {
 
         messageManager = new MessageManager(this, getLogger());
         messageManager.load();
+
+        dataStore = new SqliteStore(getDataFolder(), configManager, getLogger());
+        if (!dataStore.initialize()) {
+            throw new IllegalStateException("Failed to initialize OakLog database. See log for details.");
+        }
     }
 
     public boolean reload() {
@@ -65,6 +75,10 @@ public final class OakLog extends JavaPlugin {
 
     public DebugLogger getDebugLogger() {
         return debugLogger;
+    }
+
+    public SqliteStore getDataStore() {
+        return dataStore;
     }
 
     public void debug(String message) {
