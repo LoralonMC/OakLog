@@ -38,10 +38,54 @@ full-log-complete:
   display: chat
 
 # ============================================================
+# GUI TEXT
+# ============================================================
+# All GUI strings are parsed via MiniMessage and have <!italic> applied
+# automatically by MessageManager.deserialize.
+
+gui:
+  hub:
+    title: "<#6B7A5E>Collection Log"
+    player-head-name: "<#FCD472><player>"
+    player-head-lore: "<#f2ebd7>Collected: <#FCD472><collected><#6C757D>/<#FCD472><total> <#6C757D>(<#8FAA87><percent>%<#6C757D>)"
+    category-name: "<#6B7A5E><category>"
+    category-lore: "<#f2ebd7>Progress: <#FCD472><collected><#6C757D>/<#FCD472><total>"
+
+  category:
+    title: "<#6B7A5E>Collection Log <#6C757D>· <#f2ebd7><category>"
+
+  tab:
+    name: "<#f2ebd7><category>"
+    active-name: "<#8FAA87>▶ <category>"
+
+  entry:
+    name-collected: "<#8FAA87><entry>"
+    name-uncollected: "<#6C757D><entry>"
+    lore-collected: "<#f2ebd7>Status: <#8FAA87>✓ Collected<#6C757D> · <#f2ebd7>Obtained: <#FCD472><date>"
+    lore-uncollected: "<#f2ebd7>Status: <#C27B6B>✗ Not yet collected"
+
+  button:
+    recent: "<#FCD472>Recent Activity"
+    sets: "<#FCD472>Sets"
+    search: "<#FCD472>Search"
+    leaderboard: "<#FCD472>Leaderboard"
+    close: "<#C27B6B>Close"
+    back: "<#FCD472>◀ Back"
+    next-page: "<#FCD472>Next Page ▶"
+    prev-page: "<#FCD472>◀ Previous Page"
+    page-indicator: "<#f2ebd7>Page <#FCD472><page><#6C757D>/<#FCD472><total_pages>"
+    filter-all: "<#f2ebd7>Filter: <#FCD472>All"
+    filter-collected: "<#f2ebd7>Filter: <#8FAA87>Collected"
+    filter-uncollected: "<#f2ebd7>Filter: <#C27B6B>Uncollected"
+
+# ============================================================
 # COMMAND MESSAGES
 # ============================================================
 
 commands:
+  # Shown when console tries a player-only command
+  player-only: "<#6C757D>[<#C27B6B>ᴇʀʀᴏʀ<#6C757D>] <#C27B6B>This command must be run by a player."
+
   # Shown when configuration is reloaded successfully
   # Placeholders: <added>, <retired>
   reload-success: "<#6C757D>[<#6B7A5E>ʟᴏɢ<#6C757D>] <#f2ebd7>Configuration <#8FAA87>reloaded<#f2ebd7>. <#FCD472><added><#f2ebd7> new entries, <#FCD472><retired><#f2ebd7> retired."

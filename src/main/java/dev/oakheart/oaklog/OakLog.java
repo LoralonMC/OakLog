@@ -2,6 +2,7 @@ package dev.oakheart.oaklog;
 
 import dev.oakheart.message.MessageManager;
 import dev.oakheart.oaklog.config.ConfigManager;
+import dev.oakheart.oaklog.commands.OakLogCommand;
 import dev.oakheart.oaklog.detection.ItemBlockListener;
 import dev.oakheart.oaklog.enumeration.BiomeGrouping;
 import dev.oakheart.oaklog.enumeration.VanillaEnumerator;
@@ -9,6 +10,9 @@ import dev.oakheart.oaklog.progress.ProgressManager;
 import dev.oakheart.oaklog.registry.EntryRegistry;
 import dev.oakheart.oaklog.registry.RegistrySync;
 import dev.oakheart.oaklog.storage.SqliteStore;
+import dev.oakheart.oaklog.ui.GuiListener;
+import dev.oakheart.oaklog.ui.IconRenderer;
+import dev.oakheart.oaklog.util.DateFormat;
 import dev.oakheart.oaklog.variants.VariantResolvers;
 import dev.oakheart.util.DebugLogger;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -27,6 +31,8 @@ public final class OakLog extends JavaPlugin {
     private EntryRegistry entryRegistry;
     private RegistrySync registrySync;
     private ProgressManager progressManager;
+    private DateFormat dateFormat;
+    private IconRenderer iconRenderer;
 
     @Override
     public void onEnable() {
@@ -34,6 +40,7 @@ public final class OakLog extends JavaPlugin {
             initializeComponents();
             syncRegistry();
             registerListeners();
+            registerCommands();
             progressManager.start();
 
             getLogger().info("OakLog enabled with " + entryRegistry.liveCount() + " live entries.");
@@ -79,6 +86,8 @@ public final class OakLog extends JavaPlugin {
         entryRegistry = new EntryRegistry();
         registrySync = new RegistrySync(dataStore, entryRegistry, vanillaEnumerator, getLogger());
         progressManager = new ProgressManager(this, configManager, dataStore, entryRegistry);
+        dateFormat = new DateFormat(configManager);
+        iconRenderer = new IconRenderer(messageManager, dateFormat);
     }
 
     private void syncRegistry() {
@@ -89,6 +98,11 @@ public final class OakLog extends JavaPlugin {
         getServer().getPluginManager().registerEvents(progressManager, this);
         getServer().getPluginManager().registerEvents(
                 new ItemBlockListener(entryRegistry, progressManager), this);
+        getServer().getPluginManager().registerEvents(new GuiListener(), this);
+    }
+
+    private void registerCommands() {
+        new OakLogCommand(this, iconRenderer).register();
     }
 
     public boolean reload() {
@@ -139,6 +153,14 @@ public final class OakLog extends JavaPlugin {
 
     public ProgressManager getProgressManager() {
         return progressManager;
+    }
+
+    public IconRenderer getIconRenderer() {
+        return iconRenderer;
+    }
+
+    public DateFormat getDateFormatter() {
+        return dateFormat;
     }
 
     public void debug(String message) {
