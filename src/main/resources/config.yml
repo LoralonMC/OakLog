@@ -64,6 +64,11 @@ detection:
   # plugins (Nexo in particular publishes a lot of items that exist only
   # to be wrapped by other plugins). Supports '*' globs.
   excluded-entries:
+    # ===== Entities not accessible to players in survival =====
+    - 'minecraft:entity_giant'         # legacy unused mob; /summon only
+    - 'minecraft:entity_illusioner'    # /summon only
+    - 'minecraft:entity_mannequin'     # testing entity
+
     # ===== HMCCosmetics UI items =====
     - 'nexo:hmc_*'
     - 'nexo:arrow_next'
