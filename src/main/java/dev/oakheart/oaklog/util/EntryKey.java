@@ -33,6 +33,25 @@ public final class EntryKey {
         return normalize(materialName);
     }
 
+    public static boolean globMatches(String pattern, String value) {
+        if (pattern == null || value == null) return false;
+        if (pattern.equals(value)) return true;
+        if (!pattern.contains("*")) return false;
+
+        StringBuilder regex = new StringBuilder();
+        for (int i = 0; i < pattern.length(); i++) {
+            char c = pattern.charAt(i);
+            if (c == '*') {
+                regex.append(".*");
+            } else if ("\\.[](){}+?^$|".indexOf(c) >= 0) {
+                regex.append('\\').append(c);
+            } else {
+                regex.append(c);
+            }
+        }
+        return value.matches(regex.toString());
+    }
+
     public static String displayNameFromKey(String key) {
         if (key == null || key.isEmpty()) return key;
         String[] parts = key.split("_");

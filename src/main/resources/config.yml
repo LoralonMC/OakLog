@@ -38,6 +38,7 @@ detection:
   structure-check-on-chunk-change: true
 
   # Materials that should NOT be trackable as Items or Blocks (creative-only or unobtainable).
+  # Supports glob patterns with '*' — e.g. '*_spawn_egg' excludes every spawn egg.
   # Remove an entry to make it trackable. These materials are skipped entirely - they won't
   # appear in the log at all.
   excluded-items:
@@ -52,6 +53,7 @@ detection:
     - knowledge_book
     - barrier
     - light
+    - '*_spawn_egg'
 
 # ============================================================
 # STORAGE

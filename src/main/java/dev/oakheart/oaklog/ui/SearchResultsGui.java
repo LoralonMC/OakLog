@@ -5,6 +5,7 @@ import dev.oakheart.oaklog.model.Entry;
 import dev.oakheart.oaklog.model.PlayerProgress;
 import dev.oakheart.oaklog.util.PaginationMath;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -64,10 +65,13 @@ public class SearchResultsGui extends OakLogGui {
             inventory.setItem(slot, iconRenderer.build(matches.get(start + i), progress));
         }
 
+        int totalPagesForLore = PaginationMath.totalPages(matches.size());
+        TagResolver pageTag = Placeholder.unparsed("page", String.valueOf(page + 1));
+        TagResolver totalTag = Placeholder.unparsed("total_pages", String.valueOf(totalPagesForLore));
         inventory.setItem(BTN_PREV, iconRenderer.buildButton(
-                Material.ARROW, "gui.button.prev-page", null));
+                Material.ARROW, "gui.button.prev-page", "gui.button.prev-page-lore", pageTag, totalTag));
         inventory.setItem(BTN_NEXT, iconRenderer.buildButton(
-                Material.ARROW, "gui.button.next-page", null));
+                Material.ARROW, "gui.button.next-page", "gui.button.next-page-lore", pageTag, totalTag));
         inventory.setItem(BTN_BACK, iconRenderer.buildButton(
                 Material.OAK_DOOR, "gui.button.back-to-hub", null));
 

@@ -159,13 +159,14 @@ public class CategoryGui extends OakLogGui {
         int total = filteredEntries().size();
         int totalPages = PaginationMath.totalPages(total);
 
-        inventory.setItem(BTN_PREV_PAGE, iconRenderer.buildButton(
-                Material.ARROW, "gui.button.prev-page", null));
-        inventory.setItem(BTN_NEXT_PAGE, iconRenderer.buildButton(
-                Material.ARROW, "gui.button.next-page", null));
-
         TagResolver pageTag = Placeholder.unparsed("page", String.valueOf(page + 1));
         TagResolver totalTag = Placeholder.unparsed("total_pages", String.valueOf(totalPages));
+
+        inventory.setItem(BTN_PREV_PAGE, iconRenderer.buildButton(
+                Material.ARROW, "gui.button.prev-page", "gui.button.prev-page-lore", pageTag, totalTag));
+        inventory.setItem(BTN_NEXT_PAGE, iconRenderer.buildButton(
+                Material.ARROW, "gui.button.next-page", "gui.button.next-page-lore", pageTag, totalTag));
+
         inventory.setItem(PAGE_INDICATOR_SLOT, iconRenderer.buildButton(
                 Material.PAPER, "gui.button.page-indicator", null, pageTag, totalTag));
 

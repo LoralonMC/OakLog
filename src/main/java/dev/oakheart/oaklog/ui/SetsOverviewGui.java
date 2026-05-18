@@ -100,10 +100,13 @@ public class SetsOverviewGui extends OakLogGui {
     }
 
     private void renderBottomRow() {
+        int totalPages = PaginationMath.totalPages(plugin.getSetsConfig().sets().size());
+        TagResolver pageTag = Placeholder.unparsed("page", String.valueOf(page + 1));
+        TagResolver totalTag = Placeholder.unparsed("total_pages", String.valueOf(totalPages));
         inventory.setItem(BTN_PREV, iconRenderer.buildButton(
-                Material.ARROW, "gui.button.prev-page", null));
+                Material.ARROW, "gui.button.prev-page", "gui.button.prev-page-lore", pageTag, totalTag));
         inventory.setItem(BTN_NEXT, iconRenderer.buildButton(
-                Material.ARROW, "gui.button.next-page", null));
+                Material.ARROW, "gui.button.next-page", "gui.button.next-page-lore", pageTag, totalTag));
         inventory.setItem(BTN_BACK, iconRenderer.buildButton(
                 Material.OAK_DOOR, "gui.button.back-to-hub", null));
     }

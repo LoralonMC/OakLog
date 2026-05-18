@@ -155,7 +155,7 @@ public class ToastService implements Listener {
 
             String criterionId = "x";
             Advancement advancement = new Advancement(
-                    key,
+                    null,           // parent — null means root
                     display,
                     java.util.List.of(criterionId),
                     java.util.List.of(java.util.List.of(criterionId)),

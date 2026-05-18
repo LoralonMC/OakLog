@@ -19,10 +19,8 @@ import org.bukkit.generator.structure.Structure;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 
 public class VanillaEnumerator {
 
@@ -36,12 +34,9 @@ public class VanillaEnumerator {
 
     public List<EntryDescriptor> enumerate() {
         List<EntryDescriptor> all = new ArrayList<>();
-        Set<String> excluded = new HashSet<>();
-        for (String name : configManager.getExcludedItems()) {
-            excluded.add(name.toLowerCase(Locale.ROOT));
-        }
+        List<String> excludedPatterns = configManager.getExcludedItems();
 
-        enumerateMaterials(all, excluded);
+        enumerateMaterials(all, excludedPatterns);
         enumerateEntities(all);
         enumerateBiomes(all);
         enumerateStructures(all);
@@ -51,13 +46,13 @@ public class VanillaEnumerator {
         return all;
     }
 
-    private void enumerateMaterials(List<EntryDescriptor> out, Set<String> excluded) {
+    private void enumerateMaterials(List<EntryDescriptor> out, List<String> excludedPatterns) {
         for (Material material : Registry.MATERIAL) {
             if (material.isAir()) continue;
             if (material.isLegacy()) continue;
 
             String keyName = material.getKey().getKey();
-            if (excluded.contains(keyName.toLowerCase(Locale.ROOT))) continue;
+            if (isExcluded(keyName, excludedPatterns)) continue;
 
             // Skip technical world-only blocks (wall signs, potted plants,
             // wall torches, portal blocks, etc.) — these have isBlock=true
@@ -193,6 +188,16 @@ public class VanillaEnumerator {
                     null
             ));
         }
+    }
+
+    private static boolean isExcluded(String materialKey, List<String> patterns) {
+        String lower = materialKey.toLowerCase(Locale.ROOT);
+        for (String pattern : patterns) {
+            if (EntryKey.globMatches(pattern.toLowerCase(Locale.ROOT), lower)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isCollectableEntity(EntityType type) {

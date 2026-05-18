@@ -22,6 +22,8 @@ import dev.oakheart.oaklog.enumeration.BiomeGrouping;
 import dev.oakheart.oaklog.enumeration.SetComputer;
 import dev.oakheart.oaklog.enumeration.VanillaEnumerator;
 import dev.oakheart.oaklog.integration.adapter.AdapterRegistry;
+import dev.oakheart.oaklog.integration.adapter.ExecutableItemsAdapter;
+import dev.oakheart.oaklog.integration.adapter.NexoAdapter;
 import dev.oakheart.oaklog.integration.adapter.PdcAdapter;
 import dev.oakheart.oaklog.leaderboard.LeaderboardManager;
 import dev.oakheart.oaklog.progress.ProgressManager;
@@ -124,6 +126,8 @@ public final class OakLog extends JavaPlugin {
         entryRegistry = new EntryRegistry();
 
         adapterRegistry = new AdapterRegistry(getLogger());
+        adapterRegistry.register(new NexoAdapter(this));
+        adapterRegistry.register(new ExecutableItemsAdapter(this));
         adapterRegistry.register(new PdcAdapter(this));
 
         setsConfig = new SetsConfig(this);
