@@ -69,12 +69,15 @@ public class IconRenderer {
         }
         if (meta == null) return stack;
 
-        // For live icons keep the source plugin's display name; for stored
-        // icons render the templated name from messages.yml.
+        // For live icons keep the source plugin's display name. For stored
+        // icons, only override the name if messages.yml provides a non-empty
+        // template — otherwise leave it unset so Minecraft renders the
+        // natural item name with its built-in rarity colour (white / yellow /
+        // aqua / light purple).
         if (!usedLiveIcon) {
             String nameKey = collected ? "gui.entry.name-collected" : "gui.entry.name-uncollected";
             Optional<Component> name = messages.parse(nameKey, entryTag, dateTag);
-            meta.displayName(name.orElse(Component.text(entry.displayName())));
+            name.ifPresent(meta::displayName);
         }
 
         // Lore: keep any existing lore (from live icon) and append the OakLog
