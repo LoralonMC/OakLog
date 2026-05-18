@@ -48,17 +48,28 @@ public class EntryRegistry {
         }
         this.liveCount = live;
 
-        // Sort each category's id list by entry display name (case-insensitive)
-        // so vanilla and custom items mix naturally in the GUI.
+        // Sort each category's id list by entry display name (case-insensitive,
+        // ignoring leading non-letter/digit decoration) so vanilla and custom
+        // items mix naturally in the GUI.
         java.util.Comparator<Integer> byDisplay = (a, b) -> {
             Entry ea = entriesById.get(a);
             Entry eb = entriesById.get(b);
             if (ea == null || eb == null) return 0;
-            return ea.displayName().compareToIgnoreCase(eb.displayName());
+            return sortKey(ea.displayName()).compareToIgnoreCase(sortKey(eb.displayName()));
         };
         for (List<Integer> ids : entryIdsByCategory.values()) {
             ids.sort(byDisplay);
         }
+    }
+
+    private static String sortKey(String displayName) {
+        if (displayName == null) return "";
+        int start = 0;
+        int n = displayName.length();
+        while (start < n && !Character.isLetterOrDigit(displayName.charAt(start))) {
+            start++;
+        }
+        return start >= n ? displayName : displayName.substring(start);
     }
 
     private void indexVanillaMaterial(Entry entry) {
@@ -118,12 +129,12 @@ public class EntryRegistry {
             if (EntryKey.VANILLA.equals(entry.namespace())) {
                 indexVanillaMaterial(entry);
             }
-            // Re-sort the affected category by display name.
+            // Re-sort the affected category by the same normalised sort key.
             entryIdsByCategory.get(entry.category()).sort((a, b) -> {
                 Entry ea = entriesById.get(a);
                 Entry eb = entriesById.get(b);
                 if (ea == null || eb == null) return 0;
-                return ea.displayName().compareToIgnoreCase(eb.displayName());
+                return sortKey(ea.displayName()).compareToIgnoreCase(sortKey(eb.displayName()));
             });
         }
     }
