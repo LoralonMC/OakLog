@@ -133,9 +133,11 @@ public class ToastService implements Listener {
     }
 
     private void send(Player player, Entry entry, AdvancementType type, String title, String description) {
-        ItemStack icon = resolveIconForToast(entry);
-        if (icon != null) {
-            sendRawWithIcon(player, icon, type, title, description);
+        org.bukkit.inventory.ItemStack live = resolveLiveBukkitIcon(entry);
+        if (live != null) {
+            ItemStack peIcon = SpigotConversionUtil.fromBukkitItemStack(live);
+            Component customTitle = liveDisplayName(live, title);
+            sendRawWithIcon(player, peIcon, type, customTitle, Component.text(description));
             return;
         }
         String materialName = entry.iconMaterial() != null
@@ -144,23 +146,31 @@ public class ToastService implements Listener {
         sendRaw(player, "minecraft:" + materialName, type, title, description);
     }
 
-    private ItemStack resolveIconForToast(Entry entry) {
+    private org.bukkit.inventory.ItemStack resolveLiveBukkitIcon(Entry entry) {
         try {
-            return adapterRegistry.resolveLiveIcon(entry.namespacedKey())
-                    .map(SpigotConversionUtil::fromBukkitItemStack)
-                    .orElse(null);
+            return adapterRegistry.resolveLiveIcon(entry.namespacedKey()).orElse(null);
         } catch (Throwable t) {
             return null;
         }
     }
 
+    private Component liveDisplayName(org.bukkit.inventory.ItemStack stack, String fallback) {
+        try {
+            if (stack.hasItemMeta()) {
+                Component name = stack.getItemMeta().displayName();
+                if (name != null) return name;
+            }
+        } catch (Throwable ignored) {}
+        return Component.text(fallback);
+    }
+
     private void sendRawWithIcon(Player player, ItemStack icon, AdvancementType type,
-                                 String title, String description) {
+                                 Component title, Component description) {
         try {
             ResourceLocation key = new ResourceLocation("oaklog", "toast/" + UUID.randomUUID());
             AdvancementDisplay display = new AdvancementDisplay(
-                    Component.text(title),
-                    Component.text(description),
+                    title,
+                    description,
                     icon,
                     type,
                     null,
@@ -193,7 +203,7 @@ public class ToastService implements Listener {
             );
             PacketEvents.getAPI().getPlayerManager().sendPacket(player, add);
             plugin.debug("Toast packet sent: player=" + player.getName()
-                    + " icon=<live custom item> frame=" + type + " title=\"" + title + "\"");
+                    + " icon=<live custom item> frame=" + type);
 
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 try {
