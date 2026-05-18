@@ -2,9 +2,14 @@ package dev.oakheart.oaklog.ui;
 
 import dev.oakheart.message.MessageManager;
 import dev.oakheart.oaklog.integration.adapter.AdapterRegistry;
+import dev.oakheart.oaklog.model.Category;
 import dev.oakheart.oaklog.model.Entry;
 import dev.oakheart.oaklog.model.PlayerProgress;
 import dev.oakheart.oaklog.util.DateFormat;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
@@ -76,23 +81,34 @@ public class IconRenderer {
             }
             // Apply variant components for synthetic vanilla entries that
             // share one Material across many sub-variants (Goat Horns,
-            // potions, tipped arrows).
+            // potions, tipped arrows, enchanted books).
             if (meta != null) {
                 applyGoatHornVariant(entry, meta);
                 applyPotionVariant(entry, meta);
+                applyEnchantmentVariant(entry, meta);
             }
         }
         if (meta == null) return stack;
 
         // For live icons keep the source plugin's display name. For stored
-        // icons, only override the name if messages.yml provides a non-empty
-        // template — otherwise leave it unset so Minecraft renders the
-        // natural item name with its built-in rarity colour (white / yellow /
-        // aqua / light purple).
+        // icons, decide based on category:
+        //   - BLOCKS / ITEMS: leave displayName unset so Minecraft renders
+        //     the natural material name with its rarity colour.
+        //   - Other categories (biomes, structures, effects, enchantments):
+        //     the icon material is a generic placeholder, so override with
+        //     the entry's stored display name otherwise every entry shows
+        //     up labelled "Grass Block" / "Cobblestone" / "Potion" /
+        //     "Enchanted Book".
+        // The messages.yml templates take precedence over both when set.
         if (!usedLiveIcon) {
             String nameKey = collected ? "gui.entry.name-collected" : "gui.entry.name-uncollected";
             Optional<Component> name = messages.parse(nameKey, entryTag, dateTag);
-            name.ifPresent(meta::displayName);
+            if (name.isPresent()) {
+                meta.displayName(name.get());
+            } else if (entry.category() != Category.BLOCKS && entry.category() != Category.ITEMS) {
+                meta.displayName(Component.text(entry.displayName())
+                        .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
+            }
         } else {
             // Live-icon path: if the source plugin built the item without
             // setting an explicit name component (some Nexo items omit
@@ -177,6 +193,20 @@ public class IconRenderer {
             MusicInstrument instrument = reg.get(new NamespacedKey(entry.namespace(),
                     variant + "_goat_horn"));
             if (instrument != null) inst.setInstrument(instrument);
+        } catch (Throwable ignored) {}
+    }
+
+    private static void applyEnchantmentVariant(Entry entry, ItemMeta meta) {
+        if (entry.category() != Category.ENCHANTMENTS) return;
+        if (!(meta instanceof EnchantmentStorageMeta storage)) return;
+        String key = entry.key();
+        if (key == null || !key.startsWith("enchantment_")) return;
+        String enchKey = key.substring("enchantment_".length());
+        try {
+            Registry<Enchantment> reg = RegistryAccess.registryAccess()
+                    .getRegistry(RegistryKey.ENCHANTMENT);
+            Enchantment ench = reg.get(new NamespacedKey(entry.namespace(), enchKey));
+            if (ench != null) storage.addStoredEnchant(ench, 1, true);
         } catch (Throwable ignored) {}
     }
 
