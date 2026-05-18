@@ -48,8 +48,30 @@ public class RegistrySync {
             existingByKey.put(e.namespacedKey(), e);
         }
 
-        List<EntryDescriptor> live = new ArrayList<>(vanillaEnumerator.enumerate());
-        live.addAll(adapterRegistry.enumerateAll());
+        List<EntryDescriptor> raw = new ArrayList<>(vanillaEnumerator.enumerate());
+        raw.addAll(adapterRegistry.enumerateAll());
+
+        // Dedupe by namespacedKey. The runtime registry occasionally exposes
+        // multiple Material/EntityType constants that share the same registry
+        // key (notably across server upgrades that alias old constants); we
+        // keep the first and warn about the rest so the source can be fixed.
+        List<EntryDescriptor> live = new ArrayList<>(raw.size());
+        Set<String> seen = new HashSet<>();
+        int duplicateCount = 0;
+        for (EntryDescriptor d : raw) {
+            String nk = EntryKey.join(d.namespace(), d.key());
+            if (seen.add(nk)) {
+                live.add(d);
+            } else {
+                if (duplicateCount < 10) {
+                    logger.warning("Duplicate enumerator entry for " + nk + " (" + d.category() + ") — keeping first");
+                }
+                duplicateCount++;
+            }
+        }
+        if (duplicateCount > 10) {
+            logger.warning("...and " + (duplicateCount - 10) + " more duplicates suppressed.");
+        }
 
         Set<String> liveKeys = new HashSet<>();
         List<EntryDescriptor> toInsert = new ArrayList<>();
