@@ -32,7 +32,8 @@ public class ExecutableItemsAdapter implements EntryAdapter {
 
     private Object manager;
     private Method idsListMethod;
-    private Method idFromItemMethod;
+    private Method getExecutableItemMethod;
+    private Method getIdOnInterfaceMethod;
     private boolean warned;
 
     public ExecutableItemsAdapter(OakLog plugin) {
@@ -72,15 +73,17 @@ public class ExecutableItemsAdapter implements EntryAdapter {
                 return false;
             }
 
-            idFromItemMethod = findMethod(manager.getClass(),
-                    new String[]{"getExecutableItemIdFromItemStack", "getIdFromItemStack"},
+            // Per the EI docs: getExecutableItem(ItemStack) returns
+            // Optional<ExecutableItemInterface>; the interface exposes getId().
+            getExecutableItemMethod = findMethod(manager.getClass(),
+                    new String[]{"getExecutableItem"},
                     new Class<?>[]{ItemStack.class});
             idsListMethod = findMethod(manager.getClass(),
-                    new String[]{"getExecutableItemIdsList", "getExecutableItems", "getAllIds"},
+                    new String[]{"getExecutableItemIdsList"},
                     new Class<?>[0]);
 
-            if (idFromItemMethod == null) {
-                logger.warning("ExecutableItems: no compatible detect method found on "
+            if (getExecutableItemMethod == null) {
+                logger.warning("ExecutableItems: getExecutableItem(ItemStack) not found on "
                         + manager.getClass().getName());
                 return false;
             }
@@ -94,13 +97,19 @@ public class ExecutableItemsAdapter implements EntryAdapter {
     }
 
     private Plugin findHostPlugin() {
+        // SCore houses the API class; ExecutableItems registers the items.
+        // Prefer SCore (the API container) and fall back to EI's own plugin.
+        Plugin scoreCandidate = null;
+        Plugin eiCandidate = null;
         for (Plugin p : plugin.getServer().getPluginManager().getPlugins()) {
             String mainClass = p.getClass().getName();
-            if (mainClass.startsWith("com.ssomar.executableitems")) {
-                return p;
+            if (mainClass.startsWith("com.ssomar.score")) {
+                scoreCandidate = p;
+            } else if (mainClass.startsWith("com.ssomar.executableitems")) {
+                eiCandidate = p;
             }
         }
-        return null;
+        return scoreCandidate != null ? scoreCandidate : eiCandidate;
     }
 
     private static Method findMethod(Class<?> cls, String[] names, Class<?>[] params) {
@@ -149,21 +158,28 @@ public class ExecutableItemsAdapter implements EntryAdapter {
 
     @Override
     public String detect(ItemStack stack) {
-        if (manager == null || idFromItemMethod == null) return null;
+        if (manager == null || getExecutableItemMethod == null) return null;
         try {
-            Object result = idFromItemMethod.invoke(manager, stack);
-            if (result == null) return null;
-            String id;
-            if (result instanceof Optional<?> opt) {
-                if (opt.isEmpty()) return null;
-                id = opt.get().toString();
-            } else {
-                id = result.toString();
+            Object result = getExecutableItemMethod.invoke(manager, stack);
+            if (!(result instanceof Optional<?> opt) || opt.isEmpty()) return null;
+
+            Object eiInterface = opt.get();
+            if (getIdOnInterfaceMethod == null) {
+                getIdOnInterfaceMethod = findMethod(eiInterface.getClass(),
+                        new String[]{"getId", "getID", "id"},
+                        new Class<?>[0]);
+                if (getIdOnInterfaceMethod == null) {
+                    warnOnce("ExecutableItems: ExecutableItemInterface has no getId() method");
+                    return null;
+                }
             }
-            if (id == null || id.isBlank()) return null;
+            Object idObj = getIdOnInterfaceMethod.invoke(eiInterface);
+            if (idObj == null) return null;
+            String id = idObj.toString();
+            if (id.isBlank()) return null;
             return NAMESPACE + ":" + id.toLowerCase(Locale.ROOT);
         } catch (Exception e) {
-            warnOnce("ExecutableItems idFromItem failed: " + e.getMessage());
+            warnOnce("ExecutableItems detect failed: " + e.getMessage());
             return null;
         }
     }
