@@ -50,7 +50,7 @@ public class EntityListener implements Listener {
 
     private void markEntityCollected(Player player, Entity entity) {
         EntityType type = entity.getType();
-        String key = type.getKey().getKey();
+        String key = "entity_" + type.getKey().getKey();
 
         VariantResolver resolver = variantResolvers.get(type);
         if (resolver != null) {

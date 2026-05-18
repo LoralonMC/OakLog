@@ -90,7 +90,7 @@ public class VanillaEnumerator {
             if (resolver == null) {
                 out.add(new EntryDescriptor(
                         EntryKey.VANILLA,
-                        keyName,
+                        "entity_" + keyName,
                         Category.ENTITIES,
                         baseDisplay,
                         baseIcon,
@@ -105,7 +105,7 @@ public class VanillaEnumerator {
                 String iconOverride = resolver.iconMaterial(variantKey);
                 out.add(new EntryDescriptor(
                         EntryKey.VANILLA,
-                        keyName + "_" + variantKey,
+                        "entity_" + keyName + "_" + variantKey,
                         Category.ENTITIES,
                         suffix + " " + baseDisplay,
                         iconOverride != null ? iconOverride : baseIcon,
