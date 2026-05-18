@@ -51,15 +51,18 @@ public class RegistrySync {
         List<EntryDescriptor> raw = new ArrayList<>(vanillaEnumerator.enumerate());
         raw.addAll(adapterRegistry.enumerateAll());
 
-        // Dedupe by namespacedKey. The runtime registry occasionally exposes
-        // multiple Material/EntityType constants that share the same registry
-        // key (notably across server upgrades that alias old constants); we
-        // keep the first and warn about the rest so the source can be fixed.
+        // Dedupe by namespacedKey AND filter against excluded-entries patterns.
+        List<String> excluded = exclusionPatterns();
         List<EntryDescriptor> live = new ArrayList<>(raw.size());
         Set<String> seen = new HashSet<>();
         int duplicateCount = 0;
+        int excludedCount = 0;
         for (EntryDescriptor d : raw) {
             String nk = EntryKey.join(d.namespace(), d.key());
+            if (matchesExcluded(nk, excluded)) {
+                excludedCount++;
+                continue;
+            }
             if (seen.add(nk)) {
                 live.add(d);
             } else {
@@ -71,6 +74,9 @@ public class RegistrySync {
         }
         if (duplicateCount > 10) {
             logger.warning("...and " + (duplicateCount - 10) + " more duplicates suppressed.");
+        }
+        if (excludedCount > 0) {
+            logger.info("Excluded " + excludedCount + " entries via detection.excluded-entries patterns");
         }
 
         Set<String> liveKeys = new HashSet<>();
@@ -130,6 +136,27 @@ public class RegistrySync {
                 result.added, result.retired, result.revived, result.updated,
                 result.totalEntries, registry.liveCount(), memberships));
         return result;
+    }
+
+    private List<String> exclusionPatterns() {
+        try {
+            // Pull the config off the data store's plugin reference via the
+            // package-internal hook in OakLog. We avoid a direct ConfigManager
+            // dep here to keep RegistrySync's constructor signature stable.
+            return ((dev.oakheart.oaklog.storage.SqliteStore) dataStore)
+                    .configManagerHookForRegistrySync().getExcludedEntries();
+        } catch (Throwable t) {
+            return List.of();
+        }
+    }
+
+    private static boolean matchesExcluded(String namespacedKey, List<String> patterns) {
+        if (patterns.isEmpty()) return false;
+        String lower = namespacedKey.toLowerCase(java.util.Locale.ROOT);
+        for (String pattern : patterns) {
+            if (EntryKey.globMatches(pattern, lower)) return true;
+        }
+        return false;
     }
 
     private static boolean sameDisplay(Entry existing, EntryDescriptor desc) {

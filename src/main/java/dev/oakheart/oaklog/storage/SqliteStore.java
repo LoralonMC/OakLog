@@ -96,6 +96,10 @@ public class SqliteStore implements DataStore {
         return executor;
     }
 
+    public ConfigManager configManagerHookForRegistrySync() {
+        return configManager;
+    }
+
     // ========================================
     //          Entry Registry CRUD
     // ========================================

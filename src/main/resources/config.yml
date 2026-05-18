@@ -55,6 +55,14 @@ detection:
     - light
     - '*_spawn_egg'
 
+  # Exclude specific entries by their full namespacedKey ('namespace:key').
+  # Useful for hiding internal/utility custom items from plugins like Nexo
+  # (e.g. texture-only items used by other plugins). Supports '*' globs.
+  excluded-entries: []
+  #  - 'nexo:internal_*'
+  #  - 'nexo:texture_helper'
+  #  - 'executableitems:debug_*'
+
 # ============================================================
 # STORAGE
 # ============================================================

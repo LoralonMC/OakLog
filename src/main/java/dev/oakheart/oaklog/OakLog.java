@@ -162,7 +162,7 @@ public final class OakLog extends JavaPlugin {
     private void registerListeners() {
         getServer().getPluginManager().registerEvents(progressManager, this);
         getServer().getPluginManager().registerEvents(
-                new ItemBlockListener(entryRegistry, adapterRegistry, progressManager), this);
+                new ItemBlockListener(this, entryRegistry, adapterRegistry, progressManager), this);
         getServer().getPluginManager().registerEvents(
                 new EntityListener(entryRegistry, progressManager, variantResolvers), this);
         getServer().getPluginManager().registerEvents(

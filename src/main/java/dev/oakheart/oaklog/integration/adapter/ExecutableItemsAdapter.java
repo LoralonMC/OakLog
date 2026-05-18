@@ -38,6 +38,10 @@ public class ExecutableItemsAdapter implements EntryAdapter {
     private Method buildItemOnInterfaceMethod;
     private boolean warned;
 
+    // Cache of id → fresh ItemStack populated by detect() — gives the GUI
+    // the real EI icon after the first time we see each item.
+    private final java.util.Map<String, ItemStack> iconCache = new java.util.concurrent.ConcurrentHashMap<>();
+
     public ExecutableItemsAdapter(OakLog plugin) {
         this.plugin = plugin;
         this.logger = plugin.getLogger();
@@ -106,9 +110,18 @@ public class ExecutableItemsAdapter implements EntryAdapter {
         if (entryNamespacedKey == null || !entryNamespacedKey.startsWith(NAMESPACE + ":")) {
             return Optional.empty();
         }
-        if (manager == null || getByIdMethod == null) return Optional.empty();
 
         String id = entryNamespacedKey.substring(NAMESPACE.length() + 1);
+
+        // Cache fast path — populated by detect() the first time the player
+        // touches the item. Means new players see Nether Star until they
+        // (or anyone else) pick up the item once; then it renders correctly.
+        ItemStack cached = iconCache.get(id);
+        if (cached != null) {
+            return Optional.of(cached.clone());
+        }
+
+        if (manager == null || getByIdMethod == null) return Optional.empty();
         try {
             Object result = getByIdMethod.invoke(manager, id);
             Object eiInterface;
@@ -126,19 +139,25 @@ public class ExecutableItemsAdapter implements EntryAdapter {
                         new String[]{"buildItem", "getItemStack", "build", "getItem"},
                         new Class<?>[0]);
                 if (buildItemOnInterfaceMethod == null) {
-                    // Some EI versions expose buildItem(int, Player) — try with int 1
                     buildItemOnInterfaceMethod = findMethod(eiInterface.getClass(),
                             new String[]{"buildItem", "getItemStack"},
                             new Class<?>[]{int.class});
                     if (buildItemOnInterfaceMethod != null) {
                         Object built = buildItemOnInterfaceMethod.invoke(eiInterface, 1);
-                        return built instanceof ItemStack ? Optional.of((ItemStack) built) : Optional.empty();
+                        if (built instanceof ItemStack stack) {
+                            iconCache.putIfAbsent(id, stack.clone());
+                            return Optional.of(stack);
+                        }
                     }
                     return Optional.empty();
                 }
             }
             Object built = buildItemOnInterfaceMethod.invoke(eiInterface);
-            return built instanceof ItemStack ? Optional.of((ItemStack) built) : Optional.empty();
+            if (built instanceof ItemStack stack) {
+                iconCache.putIfAbsent(id, stack.clone());
+                return Optional.of(stack);
+            }
+            return Optional.empty();
         } catch (Throwable t) {
             warnOnce("ExecutableItems resolveLiveIcon failed: " + t.getMessage());
             return Optional.empty();
@@ -226,7 +245,12 @@ public class ExecutableItemsAdapter implements EntryAdapter {
             if (idObj == null) return null;
             String id = idObj.toString();
             if (id.isBlank()) return null;
-            return NAMESPACE + ":" + id.toLowerCase(Locale.ROOT);
+            String lowerId = id.toLowerCase(Locale.ROOT);
+
+            // Cache the live ItemStack so the GUI can show the real icon next time.
+            iconCache.putIfAbsent(lowerId, stack.clone());
+
+            return NAMESPACE + ":" + lowerId;
         } catch (Exception e) {
             warnOnce("ExecutableItems detect failed: " + e.getMessage());
             return null;

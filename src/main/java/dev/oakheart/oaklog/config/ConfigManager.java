@@ -30,6 +30,7 @@ public class ConfigManager {
     private int biomeCheckInterval;
     private boolean structureCheckOnChunkChange;
     private List<String> excludedItems;
+    private List<String> excludedEntries;
 
     // Storage
     private String storageFilename;
@@ -176,6 +177,10 @@ public class ConfigManager {
         excludedItems = rawExcluded.stream()
                 .map(s -> s.toLowerCase(Locale.ROOT))
                 .toList();
+        List<String> rawExcludedEntries = config.getStringList("detection.excluded-entries");
+        excludedEntries = rawExcludedEntries.stream()
+                .map(s -> s.toLowerCase(Locale.ROOT))
+                .toList();
 
         storageFilename = config.getString("storage.filename", "oaklog.db");
         if (storageFilename == null || storageFilename.isBlank()) {
@@ -226,6 +231,10 @@ public class ConfigManager {
 
     public List<String> getExcludedItems() {
         return Collections.unmodifiableList(excludedItems);
+    }
+
+    public List<String> getExcludedEntries() {
+        return Collections.unmodifiableList(excludedEntries);
     }
 
     public String getStorageFilename() {
