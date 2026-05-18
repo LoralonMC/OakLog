@@ -59,11 +59,12 @@ public class VanillaEnumerator {
             String keyName = material.getKey().getKey();
             if (excluded.contains(keyName.toLowerCase(Locale.ROOT))) continue;
 
+            // Skip technical world-only blocks (wall signs, potted plants,
+            // wall torches, portal blocks, etc.) — these have isBlock=true
+            // but isItem=false and can't actually be collected.
+            if (!material.isItem()) continue;
+
             boolean isBlock = material.isBlock();
-            boolean isItem = material.isItem();
-
-            if (!isBlock && !isItem) continue;
-
             Category category = isBlock ? Category.BLOCKS : Category.ITEMS;
             String display = EntryKey.displayNameFromKey(keyName);
             out.add(new EntryDescriptor(

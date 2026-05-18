@@ -100,7 +100,7 @@ public class IconRenderer {
         if (name == null) return Material.BARRIER;
         try {
             Material m = Material.valueOf(name.toUpperCase(java.util.Locale.ROOT));
-            if (m.isAir()) return Material.BARRIER;
+            if (m.isAir() || !m.isItem()) return Material.BARRIER;
             return m;
         } catch (IllegalArgumentException e) {
             return Material.BARRIER;
