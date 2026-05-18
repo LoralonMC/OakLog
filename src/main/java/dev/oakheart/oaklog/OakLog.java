@@ -7,10 +7,8 @@ import dev.oakheart.oaklog.integration.NexoLoadListener;
 import dev.oakheart.oaklog.integration.OakLogPlaceholders;
 import dev.oakheart.oaklog.toast.ToastService;
 import org.bstats.bukkit.Metrics;
-import dev.oakheart.oaklog.ui.search.AnvilSearchInput;
 import dev.oakheart.oaklog.ui.search.ChatSearchInput;
 import dev.oakheart.oaklog.ui.search.SearchInput;
-import dev.oakheart.oaklog.ui.search.SignSearchInput;
 import dev.oakheart.oaklog.commands.OakLogCommand;
 import dev.oakheart.oaklog.config.SetsConfig;
 import dev.oakheart.oaklog.detection.BiomeListener;
@@ -48,7 +46,7 @@ import java.util.logging.Level;
 
 public final class OakLog extends JavaPlugin {
 
-    private static final int BSTATS_PLUGIN_ID = 30000; // Update with real ID after submission
+    private static final int BSTATS_PLUGIN_ID = 31419;
 
     private ConfigManager configManager;
     private MessageManager messageManager;
@@ -164,12 +162,7 @@ public final class OakLog extends JavaPlugin {
         toastService = new ToastService(this, configManager, entryRegistry, adapterRegistry);
         toastService.initialize();
 
-        SearchInput chat = new ChatSearchInput(this);
-        searchInput = switch (configManager.getSearchInput()) {
-            case "sign" -> new SignSearchInput(this, chat);
-            case "anvil" -> new AnvilSearchInput(this, chat);
-            default -> chat;
-        };
+        searchInput = new ChatSearchInput(this);
     }
 
     private void syncRegistry() {

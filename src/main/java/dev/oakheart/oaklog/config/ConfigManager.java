@@ -15,7 +15,6 @@ import java.util.logging.Logger;
 public class ConfigManager {
 
     private static final Set<String> VALID_TOAST_STATES = Set.of("on", "off", "milestones");
-    private static final Set<String> VALID_SEARCH_INPUTS = Set.of("anvil", "sign", "chat");
 
     private final OakLog plugin;
     private final Logger logger;
@@ -45,7 +44,6 @@ public class ConfigManager {
     private boolean toastOnFullLogComplete;
 
     // Search
-    private String searchInput;
     private int searchMaxResults;
 
     // Leaderboard
@@ -133,11 +131,6 @@ public class ConfigManager {
             warnings.add("toasts.milestones.every-n-entries must be > 0, defaulting to 25");
         }
 
-        String input = configToValidate.getString("search.input", "anvil").toLowerCase(Locale.ROOT);
-        if (!VALID_SEARCH_INPUTS.contains(input)) {
-            warnings.add("search.input must be one of anvil/sign/chat, defaulting to anvil");
-        }
-
         int maxResults = configToValidate.getInt("search.max-results", 36);
         if (maxResults <= 0) {
             warnings.add("search.max-results must be > 0, defaulting to 36");
@@ -196,8 +189,6 @@ public class ConfigManager {
         toastOnCategoryComplete = config.getBoolean("toasts.milestones.on-category-complete", true);
         toastOnFullLogComplete = config.getBoolean("toasts.milestones.on-full-log-complete", true);
 
-        String rawInput = config.getString("search.input", "anvil").toLowerCase(Locale.ROOT);
-        searchInput = VALID_SEARCH_INPUTS.contains(rawInput) ? rawInput : "anvil";
         searchMaxResults = Math.max(1, config.getInt("search.max-results", 36));
 
         leaderboardRefreshSeconds = Math.max(5, config.getInt("leaderboard.refresh-interval-seconds", 60));
@@ -267,10 +258,6 @@ public class ConfigManager {
 
     public boolean isToastOnFullLogComplete() {
         return toastOnFullLogComplete;
-    }
-
-    public String getSearchInput() {
-        return searchInput;
     }
 
     public int getSearchMaxResults() {

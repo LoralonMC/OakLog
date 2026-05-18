@@ -22,6 +22,7 @@ import org.bukkit.entity.Parrot;
 import org.bukkit.entity.Rabbit;
 import org.bukkit.entity.Sheep;
 import org.bukkit.entity.Wolf;
+import org.bukkit.entity.ZombieNautilus;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -56,6 +57,7 @@ public final class VariantResolvers {
         resolvers.put(EntityType.TROPICAL_FISH, new TropicalFishVariant());
         resolvers.put(EntityType.PAINTING, new PaintingVariant());
         resolvers.put(EntityType.VILLAGER, new VillagerVariant());
+        resolvers.put(EntityType.ZOMBIE_NAUTILUS, new ZombieNautilusVariant());
     }
 
     public VariantResolver get(EntityType type) {
@@ -323,6 +325,29 @@ public final class VariantResolvers {
             if (!(entity instanceof Fox fox)) return null;
             Fox.Type t = fox.getFoxType();
             return t == null ? null : t.name().toLowerCase(Locale.ROOT);
+        }
+    }
+
+    private static final class ZombieNautilusVariant implements VariantResolver {
+        @Override
+        public List<String> variantKeys() {
+            Registry<ZombieNautilus.Variant> reg = RegistryAccess.registryAccess()
+                    .getRegistry(RegistryKey.ZOMBIE_NAUTILUS_VARIANT);
+            List<String> out = new ArrayList<>();
+            for (ZombieNautilus.Variant v : reg) {
+                NamespacedKey nk = reg.getKey(v);
+                if (nk != null) out.add(nk.getKey());
+            }
+            return out;
+        }
+
+        @Override
+        public String resolve(Entity entity) {
+            if (!(entity instanceof ZombieNautilus z)) return null;
+            Registry<ZombieNautilus.Variant> reg = RegistryAccess.registryAccess()
+                    .getRegistry(RegistryKey.ZOMBIE_NAUTILUS_VARIANT);
+            NamespacedKey nk = reg.getKey(z.getVariant());
+            return nk == null ? null : nk.getKey();
         }
     }
 

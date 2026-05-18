@@ -151,9 +151,6 @@ toasts:
 # ============================================================
 
 search:
-  # How players enter a search query. Options: anvil, sign, chat
-  input: anvil
-
   # Maximum number of results shown
   max-results: 36
 
