@@ -133,17 +133,19 @@ public final class OakLog extends JavaPlugin {
         entryRegistry = new EntryRegistry();
 
         adapterRegistry = new AdapterRegistry(getLogger());
-        // Order matters: first-hit-wins on detect(), so cheap PDC-based
-        // adapters run first to short-circuit before the more expensive
-        // reflection / signature-computing ones.
-        adapterRegistry.register(new OakPetsAdapter(this));         // PDC lookup
-        adapterRegistry.register(new OakTagsAdapter(this));         // PDC lookup
-        adapterRegistry.register(new OakToolsAdapter(this));        // PDC lookup
-        adapterRegistry.register(new NexoAdapter(this));            // Nexo's internal lookup
-        adapterRegistry.register(new ExecutableItemsAdapter(this)); // reflection (cached methods)
-        adapterRegistry.register(new PhoenixCratesAdapter(this));   // signature computation
-        adapterRegistry.register(new NekoTrapsAdapter(this));       // reflection isTrap
-        adapterRegistry.register(new ShopkeepersAdapter(this));     // reflection isShopCreationItem
+        // Order matters: first-hit-wins on detect(). Specific plugins run
+        // before Nexo because many EI / PhoenixCrates / NekoTraps /
+        // Shopkeepers items wrap Nexo textures — without this order Nexo's
+        // generic idFromItem check would claim them and the more specific
+        // plugin entry would never fire.
+        adapterRegistry.register(new OakPetsAdapter(this));         // PDC, specific
+        adapterRegistry.register(new OakTagsAdapter(this));         // PDC, specific
+        adapterRegistry.register(new OakToolsAdapter(this));        // PDC, specific
+        adapterRegistry.register(new ExecutableItemsAdapter(this)); // reflection, specific
+        adapterRegistry.register(new PhoenixCratesAdapter(this));   // signature, specific
+        adapterRegistry.register(new NekoTrapsAdapter(this));       // reflection, specific
+        adapterRegistry.register(new ShopkeepersAdapter(this));     // reflection, specific
+        adapterRegistry.register(new NexoAdapter(this));            // broader (any Nexo-textured item)
         adapterRegistry.register(new PdcAdapter(this));             // generic patterns (fallback)
 
         setsConfig = new SetsConfig(this);
