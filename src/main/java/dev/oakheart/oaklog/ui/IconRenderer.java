@@ -113,6 +113,14 @@ public class IconRenderer {
                     || entry.category() == Category.STRUCTURES) {
                 meta.displayName(Component.text(entry.displayName())
                         .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
+            } else if (entry.category() == Category.EFFECTS
+                    && !(meta instanceof PotionMeta pm && pm.getBasePotionType() != null)) {
+                // Effects without a matching base PotionType render as
+                // "Uncraftable Potion" by default. Override with the entry
+                // name so Hunger / Glowing / Levitation / etc. are
+                // distinguishable.
+                meta.displayName(Component.text(entry.displayName())
+                        .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
             }
         } else {
             // Live-icon path: if the source plugin built the item without
@@ -208,15 +216,49 @@ public class IconRenderer {
         if (key == null || !key.startsWith("effect_")) return;
         String effectKey = key.substring("effect_".length());
         try {
-            Registry<PotionEffectType> reg = RegistryAccess.registryAccess()
+            Registry<PotionEffectType> effectReg = RegistryAccess.registryAccess()
                     .getRegistry(RegistryKey.MOB_EFFECT);
-            PotionEffectType type = reg.get(new NamespacedKey(entry.namespace(), effectKey));
-            if (type == null) return;
-            // Apply as a custom effect — the potion takes on the effect's
-            // colour and the effect name shows in vanilla lore.
-            potionMeta.addCustomEffect(new PotionEffect(type, 600, 0, false, true, true), true);
-            potionMeta.setColor(type.getColor());
+            PotionEffectType effectType = effectReg.get(new NamespacedKey(entry.namespace(), effectKey));
+            if (effectType == null) return;
+
+            // Prefer setting basePotionType — gives the proper vanilla name
+            // ("Potion of Swiftness" for Speed, "Potion of Strength", etc.)
+            // and authentic colour.
+            org.bukkit.potion.PotionType matched = findBasePotionForEffect(effectType);
+            if (matched != null) {
+                potionMeta.setBasePotionType(matched);
+                return;
+            }
+
+            // Effects without a matching base potion (Hunger, Glowing,
+            // Levitation, etc.) fall back to a custom-effect potion. We
+            // still set the colour so it visually differs from neighbours,
+            // and the entry's stored display name fills in for the name.
+            potionMeta.addCustomEffect(
+                    new PotionEffect(effectType, 600, 0, false, true, true), true);
+            potionMeta.setColor(effectType.getColor());
         } catch (Throwable ignored) {}
+    }
+
+    private static org.bukkit.potion.PotionType findBasePotionForEffect(PotionEffectType target) {
+        try {
+            Registry<org.bukkit.potion.PotionType> reg = RegistryAccess.registryAccess()
+                    .getRegistry(RegistryKey.POTION);
+            for (org.bukkit.potion.PotionType type : reg) {
+                NamespacedKey nk = reg.getKey(type);
+                if (nk == null) continue;
+                String name = nk.getKey();
+                // Skip duration/intensity variants and the no-effect placeholders.
+                if (name.startsWith("long_") || name.startsWith("strong_")) continue;
+                if (name.equals("awkward") || name.equals("water")
+                        || name.equals("mundane") || name.equals("thick")
+                        || name.equals("empty")) continue;
+                for (PotionEffect e : type.getPotionEffects()) {
+                    if (e.getType().equals(target)) return type;
+                }
+            }
+        } catch (Throwable ignored) {}
+        return null;
     }
 
     private static void applyEnchantmentVariant(Entry entry, ItemMeta meta) {
