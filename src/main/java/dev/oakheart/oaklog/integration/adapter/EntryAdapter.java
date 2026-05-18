@@ -4,6 +4,7 @@ import dev.oakheart.oaklog.model.EntryDescriptor;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Pluggable source of custom entries. Each adapter knows how to:
@@ -43,4 +44,17 @@ public interface EntryAdapter {
      * adapter recognises. Hot path — must be cheap.
      */
     String detect(ItemStack stack);
+
+    /**
+     * Builds a fresh, display-accurate {@link ItemStack} for the given entry —
+     * including the source plugin's custom texture (model data), display name,
+     * and lore. Called by the GUI to render entries with their "real" look.
+     * <p>
+     * Default returns empty (caller falls back to the entry's stored
+     * {@code iconMaterial}). Adapters whose backing plugin can rebuild an
+     * item from its id should override.
+     */
+    default Optional<ItemStack> resolveLiveIcon(String entryNamespacedKey) {
+        return Optional.empty();
+    }
 }

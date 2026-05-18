@@ -1,10 +1,12 @@
 package dev.oakheart.oaklog.ui;
 
 import dev.oakheart.message.MessageManager;
+import dev.oakheart.oaklog.integration.adapter.AdapterRegistry;
 import dev.oakheart.oaklog.model.Entry;
 import dev.oakheart.oaklog.model.PlayerProgress;
 import dev.oakheart.oaklog.util.DateFormat;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Material;
@@ -20,10 +22,12 @@ public class IconRenderer {
 
     private final MessageManager messages;
     private final DateFormat dateFormat;
+    private final AdapterRegistry adapterRegistry;
 
-    public IconRenderer(MessageManager messages, DateFormat dateFormat) {
+    public IconRenderer(MessageManager messages, DateFormat dateFormat, AdapterRegistry adapterRegistry) {
         this.messages = messages;
         this.dateFormat = dateFormat;
+        this.adapterRegistry = adapterRegistry;
     }
 
     public ItemStack build(Entry entry, PlayerProgress progress) {
@@ -38,29 +42,55 @@ public class IconRenderer {
             }
         }
 
-        Material material = resolveMaterial(entry.iconMaterial());
-        ItemStack stack = new ItemStack(material);
-        ItemMeta meta = stack.getItemMeta();
-        if (meta == null) return stack;
-
         TagResolver entryTag = Placeholder.unparsed("entry", entry.displayName());
         TagResolver dateTag = Placeholder.unparsed("date",
                 collectedAt != null ? dateFormat.format(collectedAt) : "");
 
-        String nameKey = collected ? "gui.entry.name-collected" : "gui.entry.name-uncollected";
-        Optional<Component> name = messages.parse(nameKey, entryTag, dateTag);
-        meta.displayName(name.orElse(Component.text(entry.displayName())));
+        // Try to use a live icon from the source plugin (preserves real texture,
+        // display name, lore for Nexo / ExecutableItems items).
+        ItemStack stack = null;
+        ItemMeta meta = null;
+        boolean usedLiveIcon = false;
+        if (adapterRegistry != null) {
+            Optional<ItemStack> live = adapterRegistry.resolveLiveIcon(entry.namespacedKey());
+            if (live.isPresent()) {
+                stack = live.get().clone();
+                meta = stack.getItemMeta();
+                usedLiveIcon = meta != null;
+            }
+        }
+        if (stack == null) {
+            Material material = resolveMaterial(entry.iconMaterial());
+            stack = new ItemStack(material);
+            meta = stack.getItemMeta();
+            if (entry.iconModelData() != null && meta != null) {
+                applyCustomModelData(meta, entry.iconModelData());
+            }
+        }
+        if (meta == null) return stack;
 
+        // For live icons keep the source plugin's display name; for stored
+        // icons render the templated name from messages.yml.
+        if (!usedLiveIcon) {
+            String nameKey = collected ? "gui.entry.name-collected" : "gui.entry.name-uncollected";
+            Optional<Component> name = messages.parse(nameKey, entryTag, dateTag);
+            meta.displayName(name.orElse(Component.text(entry.displayName())));
+        }
+
+        // Lore: keep any existing lore (from live icon) and append the OakLog
+        // status line so collected/uncollected state is visible on every entry.
         List<Component> lore = new ArrayList<>();
+        if (usedLiveIcon && meta.hasLore() && meta.lore() != null) {
+            for (Component line : meta.lore()) {
+                lore.add(line.decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
+            }
+            lore.add(Component.empty());
+        }
         String loreKey = collected ? "gui.entry.lore-collected" : "gui.entry.lore-uncollected";
         messages.parse(loreKey, entryTag, dateTag).ifPresent(lore::add);
         meta.lore(lore);
 
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
-
-        if (entry.iconModelData() != null) {
-            applyCustomModelData(meta, entry.iconModelData());
-        }
 
         stack.setItemMeta(meta);
         return stack;

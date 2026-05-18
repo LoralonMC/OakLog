@@ -33,7 +33,9 @@ public class ExecutableItemsAdapter implements EntryAdapter {
     private Object manager;
     private Method idsListMethod;
     private Method getExecutableItemMethod;
+    private Method getByIdMethod;
     private Method getIdOnInterfaceMethod;
+    private Method buildItemOnInterfaceMethod;
     private boolean warned;
 
     public ExecutableItemsAdapter(OakLog plugin) {
@@ -81,6 +83,9 @@ public class ExecutableItemsAdapter implements EntryAdapter {
             idsListMethod = findMethod(manager.getClass(),
                     new String[]{"getExecutableItemIdsList"},
                     new Class<?>[0]);
+            getByIdMethod = findMethod(manager.getClass(),
+                    new String[]{"getExecutableItem", "getExecutableItemById", "getById"},
+                    new Class<?>[]{String.class});
 
             if (getExecutableItemMethod == null) {
                 logger.warning("ExecutableItems: getExecutableItem(ItemStack) not found on "
@@ -93,6 +98,50 @@ public class ExecutableItemsAdapter implements EntryAdapter {
             logger.log(Level.WARNING, "ExecutableItems adapter unavailable: "
                     + t.getClass().getSimpleName() + " " + t.getMessage());
             return false;
+        }
+    }
+
+    @Override
+    public Optional<ItemStack> resolveLiveIcon(String entryNamespacedKey) {
+        if (entryNamespacedKey == null || !entryNamespacedKey.startsWith(NAMESPACE + ":")) {
+            return Optional.empty();
+        }
+        if (manager == null || getByIdMethod == null) return Optional.empty();
+
+        String id = entryNamespacedKey.substring(NAMESPACE.length() + 1);
+        try {
+            Object result = getByIdMethod.invoke(manager, id);
+            Object eiInterface;
+            if (result instanceof Optional<?> opt) {
+                if (opt.isEmpty()) return Optional.empty();
+                eiInterface = opt.get();
+            } else if (result == null) {
+                return Optional.empty();
+            } else {
+                eiInterface = result;
+            }
+
+            if (buildItemOnInterfaceMethod == null) {
+                buildItemOnInterfaceMethod = findMethod(eiInterface.getClass(),
+                        new String[]{"buildItem", "getItemStack", "build", "getItem"},
+                        new Class<?>[0]);
+                if (buildItemOnInterfaceMethod == null) {
+                    // Some EI versions expose buildItem(int, Player) — try with int 1
+                    buildItemOnInterfaceMethod = findMethod(eiInterface.getClass(),
+                            new String[]{"buildItem", "getItemStack"},
+                            new Class<?>[]{int.class});
+                    if (buildItemOnInterfaceMethod != null) {
+                        Object built = buildItemOnInterfaceMethod.invoke(eiInterface, 1);
+                        return built instanceof ItemStack ? Optional.of((ItemStack) built) : Optional.empty();
+                    }
+                    return Optional.empty();
+                }
+            }
+            Object built = buildItemOnInterfaceMethod.invoke(eiInterface);
+            return built instanceof ItemStack ? Optional.of((ItemStack) built) : Optional.empty();
+        } catch (Throwable t) {
+            warnOnce("ExecutableItems resolveLiveIcon failed: " + t.getMessage());
+            return Optional.empty();
         }
     }
 

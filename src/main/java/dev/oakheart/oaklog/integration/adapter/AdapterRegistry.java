@@ -6,6 +6,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 public class AdapterRegistry {
@@ -49,6 +50,19 @@ public class AdapterRegistry {
             }
         }
         return out;
+    }
+
+    public Optional<ItemStack> resolveLiveIcon(String entryNamespacedKey) {
+        if (entryNamespacedKey == null) return Optional.empty();
+        for (EntryAdapter adapter : adapters) {
+            try {
+                Optional<ItemStack> icon = adapter.resolveLiveIcon(entryNamespacedKey);
+                if (icon.isPresent()) return icon;
+            } catch (Throwable t) {
+                logger.warning("Adapter '" + adapter.id() + "' threw during resolveLiveIcon: " + t.getMessage());
+            }
+        }
+        return Optional.empty();
     }
 
     public String detect(ItemStack stack) {

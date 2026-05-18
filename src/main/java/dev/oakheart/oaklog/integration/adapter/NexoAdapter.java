@@ -1,6 +1,7 @@
 package dev.oakheart.oaklog.integration.adapter;
 
 import com.nexomc.nexo.api.NexoItems;
+import com.nexomc.nexo.items.ItemBuilder;
 import dev.oakheart.oaklog.OakLog;
 import dev.oakheart.oaklog.model.Category;
 import dev.oakheart.oaklog.model.EntryDescriptor;
@@ -10,6 +11,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -90,6 +92,23 @@ public class NexoAdapter implements EntryAdapter {
             return NAMESPACE + ":" + id.toLowerCase(Locale.ROOT);
         } catch (Throwable t) {
             return null;
+        }
+    }
+
+    @Override
+    public Optional<ItemStack> resolveLiveIcon(String entryNamespacedKey) {
+        if (entryNamespacedKey == null || !entryNamespacedKey.startsWith(NAMESPACE + ":")) {
+            return Optional.empty();
+        }
+        String id = entryNamespacedKey.substring(NAMESPACE.length() + 1);
+        try {
+            ItemBuilder builder = NexoItems.itemFromId(id);
+            if (builder == null) return Optional.empty();
+            ItemStack built = builder.build();
+            if (built == null) return Optional.empty();
+            return Optional.of(built);
+        } catch (Throwable t) {
+            return Optional.empty();
         }
     }
 }

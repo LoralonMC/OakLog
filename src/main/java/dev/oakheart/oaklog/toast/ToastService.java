@@ -134,7 +134,7 @@ public class ToastService implements Listener {
         sendRaw(player, "minecraft:" + materialName, type, title, description);
     }
 
-    private void sendRaw(Player player, String iconNamespacedName, AdvancementType type, String title, String description) {
+    public void sendRaw(Player player, String iconNamespacedName, AdvancementType type, String title, String description) {
         try {
             ItemType iconType = ItemTypes.getByName(iconNamespacedName);
             if (iconType == null) iconType = ItemTypes.getByName("minecraft:barrier");
@@ -147,13 +147,13 @@ public class ToastService implements Listener {
                     icon,
                     type,
                     null,
-                    true,
-                    false,
+                    true,           // showToast
+                    false,          // hidden
                     0f,
                     0f
             );
 
-            String criterionId = "x";
+            String criterionId = "oaklog_done";
             Advancement advancement = new Advancement(
                     null,           // parent — null means root
                     display,
@@ -168,13 +168,15 @@ public class ToastService implements Listener {
             AdvancementProgress progress = new AdvancementProgress(criteria);
 
             WrapperPlayServerUpdateAdvancements add = new WrapperPlayServerUpdateAdvancements(
-                    false,
-                    java.util.List.of(holder),
-                    Collections.emptySet(),
-                    Map.of(key, progress),
-                    false
+                    false,                          // reset
+                    java.util.List.of(holder),      // added
+                    Collections.emptySet(),         // removed
+                    Map.of(key, progress),          // progress
+                    true                            // showAdvancements (process the data client-side)
             );
             PacketEvents.getAPI().getPlayerManager().sendPacket(player, add);
+            plugin.debug("Toast packet sent: player=" + player.getName()
+                    + " icon=" + iconNamespacedName + " frame=" + type + " title=\"" + title + "\"");
 
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 try {
@@ -183,16 +185,21 @@ public class ToastService implements Listener {
                             Collections.emptyList(),
                             Set.of(key),
                             Collections.emptyMap(),
-                            false
+                            true
                     );
                     PacketEvents.getAPI().getPlayerManager().sendPacket(player, remove);
-                } catch (Exception e) {
-                    warnOnce("Failed to send toast cleanup packet: " + e.getMessage());
+                } catch (Throwable t) {
+                    logger.warning("Failed to send toast cleanup packet: " + t);
                 }
             }, 2L);
-        } catch (Exception e) {
-            warnOnce("Failed to send toast packet: " + e.getMessage());
+        } catch (Throwable t) {
+            logger.log(java.util.logging.Level.WARNING, "Failed to send toast packet", t);
         }
+    }
+
+    public void sendTestToast(Player player) {
+        sendRaw(player, "minecraft:diamond", AdvancementType.TASK,
+                "Toast test", "If you see this, toasts are working.");
     }
 
     private static String categoryName(Category category) {

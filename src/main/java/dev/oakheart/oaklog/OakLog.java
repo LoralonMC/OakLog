@@ -141,7 +141,7 @@ public final class OakLog extends JavaPlugin {
         leaderboardManager = new LeaderboardManager(this, dataStore,
                 configManager.getLeaderboardTopSize(), configManager.getLeaderboardRefreshSeconds());
         dateFormat = new DateFormat(configManager);
-        iconRenderer = new IconRenderer(messageManager, dateFormat);
+        iconRenderer = new IconRenderer(messageManager, dateFormat, adapterRegistry);
         auditLog = new AuditLog(this);
 
         toastService = new ToastService(this, configManager, entryRegistry);

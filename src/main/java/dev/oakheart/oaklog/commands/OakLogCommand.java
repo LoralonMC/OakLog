@@ -45,6 +45,7 @@ public class OakLogCommand {
                         .requires(s -> s.getSender().hasPermission("oaklog.view-others"))
                         .executes(this::executeOpenOther))
                 .then(buildToastCommand())
+                .then(buildTestToastCommand())
                 .then(buildGrantCommand())
                 .then(buildRevokeCommand())
                 .then(buildReloadCommand())
@@ -103,6 +104,30 @@ public class OakLogCommand {
         plugin.getProgressManager().setToastState(player.getUniqueId(), state);
         messages().sendCommand(sender, "toast-set-" + state.id());
         return Command.SINGLE_SUCCESS;
+    }
+
+    // --- /oaklog test-toast (debug helper) ---
+
+    private LiteralCommandNode<CommandSourceStack> buildTestToastCommand() {
+        return Commands.literal("test-toast")
+                .requires(s -> s.getSender().hasPermission("oaklog.admin.info"))
+                .executes(ctx -> {
+                    CommandSender sender = ctx.getSource().getSender();
+                    if (!(sender instanceof Player player)) {
+                        messages().sendCommand(sender, "player-only");
+                        return Command.SINGLE_SUCCESS;
+                    }
+                    if (!plugin.getToastService().isAvailable()) {
+                        sender.sendMessage(net.kyori.adventure.text.Component.text(
+                                "PacketEvents not detected — toasts unavailable."));
+                        return Command.SINGLE_SUCCESS;
+                    }
+                    plugin.getToastService().sendTestToast(player);
+                    sender.sendMessage(net.kyori.adventure.text.Component.text(
+                            "Test toast dispatched. Check the top-right of your screen."));
+                    return Command.SINGLE_SUCCESS;
+                })
+                .build();
     }
 
     // --- /oaklog grant <player> <entry|category|set|all> ---
