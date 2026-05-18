@@ -54,6 +54,7 @@ public class CategoryGui extends OakLogGui {
     private Category category;
     private int page;
     private Filter filter = Filter.ALL;
+    private final java.util.Map<Integer, Integer> slotToEntryId = new java.util.HashMap<>();
 
     public CategoryGui(OakLog plugin, Player viewer, UUID targetUuid, IconRenderer iconRenderer,
                        Category category, int page) {
@@ -119,6 +120,30 @@ public class CategoryGui extends OakLogGui {
         if (slot == FILTER_ALL) { filter = Filter.ALL; page = 0; open(); return; }
         if (slot == FILTER_COLLECTED) { filter = Filter.COLLECTED; page = 0; open(); return; }
         if (slot == FILTER_UNCOLLECTED) { filter = Filter.UNCOLLECTED; page = 0; open(); return; }
+
+        // Entry slot click → admin info (admins only)
+        Integer entryId = slotToEntryId.get(slot);
+        if (entryId != null && viewer.hasPermission("oaklog.admin.info")) {
+            sendEntryInfo(entryId);
+        }
+    }
+
+    private void sendEntryInfo(int entryId) {
+        dev.oakheart.oaklog.model.Entry entry = plugin.getEntryRegistry().get(entryId);
+        if (entry == null) return;
+        String sets = String.join(", ", plugin.getEntryRegistry().setsFor(entryId));
+        if (sets.isEmpty()) sets = "(none)";
+        plugin.getMessageManager().sendCommand(viewer, "info-line",
+                net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed(
+                        "entry", entry.namespacedKey()),
+                net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed(
+                        "display", entry.displayName()),
+                net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed(
+                        "category", entry.category().id()),
+                net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed(
+                        "sets", sets),
+                net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.unparsed(
+                        "status", entry.isRetired() ? "retired" : "live"));
     }
 
     private void renderTabs() {
@@ -154,6 +179,7 @@ public class CategoryGui extends OakLogGui {
         int start = page * PaginationMath.ENTRIES_PER_PAGE;
         int end = Math.min(start + PaginationMath.ENTRIES_PER_PAGE, filtered.size());
 
+        slotToEntryId.clear();
         PlayerProgress progress = plugin.getProgressManager().get(targetUuid);
         for (int i = 0; i < PaginationMath.ENTRIES_PER_PAGE; i++) {
             int slot = PaginationMath.FIRST_ENTRY_SLOT + i;
@@ -163,6 +189,7 @@ public class CategoryGui extends OakLogGui {
             }
             Entry entry = filtered.get(start + i);
             inventory.setItem(slot, iconRenderer.build(entry, progress));
+            slotToEntryId.put(slot, entry.id());
         }
     }
 

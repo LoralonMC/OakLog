@@ -36,10 +36,15 @@ public class OakToolsAdapter implements EntryAdapter {
     private Plugin host;
     private Object itemFactory;
     private Method createToolMethod;
+    private Method createSickleMethod;
+    private Object configManager;
+    private Method getSickleTiersMethod;
+    private Method getSickleDisplayNameMethod;
     private Object[] toolTypeValues;
     private Method toolTypeNameMethod;
 
     private final Map<String, ItemStack> iconCache = new ConcurrentHashMap<>();
+    private NamespacedKey toolTierKey;
 
     public OakToolsAdapter(OakLog plugin) {
         this.plugin = plugin;
@@ -66,6 +71,19 @@ public class OakToolsAdapter implements EntryAdapter {
             toolTypeNameMethod = toolTypeClass.getMethod("name");
 
             createToolMethod = itemFactory.getClass().getMethod("createTool", toolTypeClass);
+            // SICKLE is multi-tier (wooden, stone, iron, golden, diamond,
+            // netherite). Each tier has its own display name + Nexo texture.
+            try {
+                createSickleMethod = itemFactory.getClass().getMethod("createSickle", String.class);
+                Method getConfigManager = host.getClass().getMethod("getConfigManager");
+                configManager = getConfigManager.invoke(host);
+                getSickleTiersMethod = configManager.getClass().getMethod("getSickleTiers");
+                getSickleDisplayNameMethod = configManager.getClass()
+                        .getMethod("getSickleDisplayName", String.class);
+            } catch (Throwable ignored) {
+                // older OakTools without tiered sickles; SICKLE will be skipped
+            }
+            toolTierKey = new NamespacedKey(NAMESPACE, "tool_tier");
             return true;
         } catch (Throwable t) {
             logger.log(Level.FINE, "OakTools adapter unavailable: " + t.getClass().getSimpleName());
@@ -86,12 +104,13 @@ public class OakToolsAdapter implements EntryAdapter {
                 String enumName = (String) toolTypeNameMethod.invoke(toolType);
                 String id = enumName.toLowerCase(Locale.ROOT);
 
-                // SICKLE has six per-material variants in Nexo (wooden,
-                // stone, iron, golden, diamond, netherite) but OakTools
-                // models it as a single ToolType. Skip it so the Nexo
-                // sickle entries surface in the log instead of one
-                // untextured "Sickle".
-                if (id.equals("sickle")) continue;
+                // SICKLE: enumerate one entry per tier (wooden, stone, iron,
+                // golden, diamond, netherite) — each tier has its own
+                // display name + Nexo texture via createSickle(tier).
+                if (id.equals("sickle")) {
+                    enumerateSickleTiers(out);
+                    continue;
+                }
 
                 ItemStack tool = buildTool(toolType);
                 String displayName;
@@ -140,7 +159,15 @@ public class OakToolsAdapter implements EntryAdapter {
             if (meta == null) return null;
             String toolType = meta.getPersistentDataContainer().get(PDC_KEY, PersistentDataType.STRING);
             if (toolType == null || toolType.isBlank()) return null;
-            return NAMESPACE + ":" + toolType.toLowerCase(Locale.ROOT);
+            String toolTypeLower = toolType.toLowerCase(Locale.ROOT);
+            // Sickles also carry a TOOL_TIER PDC; entry key is sickle_<tier>.
+            if (toolTypeLower.equals("sickle") && toolTierKey != null) {
+                String tier = meta.getPersistentDataContainer().get(toolTierKey, PersistentDataType.STRING);
+                if (tier != null && !tier.isBlank()) {
+                    return NAMESPACE + ":sickle_" + tier.toLowerCase(Locale.ROOT);
+                }
+            }
+            return NAMESPACE + ":" + toolTypeLower;
         } catch (Throwable t) {
             return null;
         }
@@ -159,6 +186,51 @@ public class OakToolsAdapter implements EntryAdapter {
     private ItemStack buildTool(Object toolType) {
         try {
             Object result = createToolMethod.invoke(itemFactory, toolType);
+            return result instanceof ItemStack stack ? stack : null;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void enumerateSickleTiers(List<EntryDescriptor> out) {
+        if (createSickleMethod == null || configManager == null) return;
+        try {
+            Object tiersObj = getSickleTiersMethod.invoke(configManager);
+            if (!(tiersObj instanceof java.util.Set<?> tiers)) return;
+            for (Object tierObj : tiers) {
+                String tier = ((String) tierObj).toLowerCase(Locale.ROOT);
+                String id = "sickle_" + tier;
+                String displayName = (String) getSickleDisplayNameMethod.invoke(configManager, tier);
+                if (displayName == null || displayName.isBlank()) {
+                    displayName = humanize(tier) + " Sickle";
+                }
+
+                ItemStack tool = buildSickle(tier);
+                String materialName = "WOODEN_HOE";
+                if (tool != null) {
+                    iconCache.put(id, tool);
+                    materialName = tool.getType().name();
+                }
+
+                out.add(new EntryDescriptor(
+                        NAMESPACE,
+                        id,
+                        Category.ITEMS,
+                        displayName,
+                        materialName,
+                        null,
+                        null
+                ));
+            }
+        } catch (Throwable t) {
+            logger.log(Level.WARNING, "OakTools sickle enumerate failed", t);
+        }
+    }
+
+    private ItemStack buildSickle(String tier) {
+        try {
+            Object result = createSickleMethod.invoke(itemFactory, tier);
             return result instanceof ItemStack stack ? stack : null;
         } catch (Throwable t) {
             return null;
