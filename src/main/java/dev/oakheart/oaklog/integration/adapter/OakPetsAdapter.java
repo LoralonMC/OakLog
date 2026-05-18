@@ -3,6 +3,8 @@ package dev.oakheart.oaklog.integration.adapter;
 import dev.oakheart.oaklog.OakLog;
 import dev.oakheart.oaklog.model.Category;
 import dev.oakheart.oaklog.model.EntryDescriptor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -92,10 +94,21 @@ public class OakPetsAdapter implements EntryAdapter {
             if (!(result instanceof Collection<?> coll)) return List.of();
 
             List<EntryDescriptor> out = new ArrayList<>();
+            MiniMessage mm = MiniMessage.miniMessage();
             for (Object petInfo : coll) {
                 String petId = ((String) petInfoIdMethod.invoke(petInfo)).toLowerCase(Locale.ROOT);
-                String displayName = (String) petInfoDisplayNameMethod.invoke(petInfo);
-                if (displayName == null || displayName.isBlank()) displayName = petId;
+                String rawDisplayName = (String) petInfoDisplayNameMethod.invoke(petInfo);
+                String displayName;
+                if (rawDisplayName == null || rawDisplayName.isBlank()) {
+                    displayName = petId;
+                } else {
+                    // PetInfo.displayName() is MiniMessage-formatted. Strip
+                    // to plain text so sorting + storage uses the visible
+                    // letters, not MiniMessage tags.
+                    String plain = PlainTextComponentSerializer.plainText()
+                            .serialize(mm.deserialize(rawDisplayName)).trim();
+                    displayName = plain.isEmpty() ? petId : plain;
+                }
 
                 // Pre-build the voucher so the icon is ready when the GUI opens.
                 ItemStack voucher = buildVoucher(petId);
