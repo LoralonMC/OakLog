@@ -3,6 +3,7 @@ package dev.oakheart.oaklog;
 import dev.oakheart.message.MessageManager;
 import dev.oakheart.oaklog.config.ConfigManager;
 import dev.oakheart.oaklog.audit.AuditLog;
+import dev.oakheart.oaklog.integration.NexoLoadListener;
 import dev.oakheart.oaklog.integration.OakLogPlaceholders;
 import dev.oakheart.oaklog.toast.ToastService;
 import org.bstats.bukkit.Metrics;
@@ -172,6 +173,14 @@ public final class OakLog extends JavaPlugin {
                 new StructureListener(configManager, entryRegistry, progressManager), this);
         getServer().getPluginManager().registerEvents(new GuiListener(), this);
         getServer().getPluginManager().registerEvents(toastService, this);
+
+        if (getServer().getPluginManager().getPlugin("Nexo") != null) {
+            try {
+                getServer().getPluginManager().registerEvents(new NexoLoadListener(this), this);
+            } catch (Throwable t) {
+                getLogger().warning("Could not register Nexo load listener: " + t.getMessage());
+            }
+        }
 
         biomeListener = new BiomeListener(this, configManager, entryRegistry, progressManager);
     }

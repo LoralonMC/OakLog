@@ -42,10 +42,9 @@ public class ExecutableItemsAdapter implements EntryAdapter {
 
     @Override
     public boolean isAvailable() {
-        if (plugin.getServer().getPluginManager().getPlugin("ExecutableItems") == null) {
-            return false;
-        }
         try {
+            // Detect via API class presence — plugin can be named "ExecutableItems",
+            // "executableitems", bundled under SCore, etc. The class is the source of truth.
             Class<?> apiClass = Class.forName("com.ssomar.score.api.executableitems.ExecutableItemsAPI");
             Method getManagerMethod = apiClass.getMethod("getExecutableItemsManager");
             manager = getManagerMethod.invoke(null);
