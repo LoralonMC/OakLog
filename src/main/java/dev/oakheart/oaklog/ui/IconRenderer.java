@@ -90,7 +90,12 @@ public class IconRenderer {
         messages.parse(loreKey, entryTag, dateTag).ifPresent(lore::add);
         meta.lore(lore);
 
-        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
+        // Stored/template icons get all hide flags. Live custom icons keep
+        // their enchantment glint, attribute lines, and other source-plugin
+        // intent — the source plugin's lore already explains what they do.
+        if (!usedLiveIcon) {
+            meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
+        }
 
         stack.setItemMeta(meta);
         return stack;

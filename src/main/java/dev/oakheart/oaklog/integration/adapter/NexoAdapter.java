@@ -66,11 +66,12 @@ public class NexoAdapter implements EntryAdapter {
             for (String name : names) {
                 if (name == null || name.isBlank()) continue;
                 String id = name.toLowerCase(Locale.ROOT);
+                String display = displayNameFor(name, id);
                 out.add(new EntryDescriptor(
                         NAMESPACE,
                         id,
                         Category.ITEMS,
-                        EntryKey.displayNameFromKey(id),
+                        display,
                         "PLAYER_HEAD",
                         null,
                         null
@@ -81,6 +82,22 @@ public class NexoAdapter implements EntryAdapter {
         } catch (Throwable t) {
             logger.log(Level.WARNING, "Nexo enumerate failed", t);
             return List.of();
+        }
+    }
+
+    private String displayNameFor(String rawId, String fallbackId) {
+        try {
+            ItemBuilder builder = NexoItems.itemFromId(rawId);
+            if (builder == null) return EntryKey.displayNameFromKey(fallbackId);
+            // Prefer the item_name component (used by Nexo) over the anvil-set custom name.
+            net.kyori.adventure.text.Component name = builder.getItemName();
+            if (name == null) name = builder.getCustomName();
+            if (name == null) return EntryKey.displayNameFromKey(fallbackId);
+            String plain = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+                    .plainText().serialize(name).trim();
+            return plain.isEmpty() ? EntryKey.displayNameFromKey(fallbackId) : plain;
+        } catch (Throwable t) {
+            return EntryKey.displayNameFromKey(fallbackId);
         }
     }
 

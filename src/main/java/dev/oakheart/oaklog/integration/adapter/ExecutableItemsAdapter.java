@@ -225,11 +225,12 @@ public class ExecutableItemsAdapter implements EntryAdapter {
                 if (idObj == null) continue;
                 String id = idObj.toString().toLowerCase(Locale.ROOT);
                 if (id.isBlank()) continue;
+                String display = displayNameForId(id);
                 out.add(new EntryDescriptor(
                         NAMESPACE,
                         id,
                         Category.ITEMS,
-                        EntryKey.displayNameFromKey(id),
+                        display,
                         "NETHER_STAR",
                         null,
                         null
@@ -240,6 +241,27 @@ public class ExecutableItemsAdapter implements EntryAdapter {
         } catch (Exception e) {
             warnOnce("ExecutableItems enumerate failed: " + e.getMessage());
             return List.of();
+        }
+    }
+
+    private String displayNameForId(String id) {
+        String fallback = EntryKey.displayNameFromKey(id);
+        try {
+            ItemStack live = resolveLiveIcon(NAMESPACE + ":" + id).orElse(null);
+            if (live == null || !live.hasItemMeta()) return fallback;
+            org.bukkit.inventory.meta.ItemMeta meta = live.getItemMeta();
+            net.kyori.adventure.text.Component name = meta.displayName();
+            if (name == null) {
+                try {
+                    name = meta.itemName();
+                } catch (NoSuchMethodError ignored) {}
+            }
+            if (name == null) return fallback;
+            String plain = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+                    .plainText().serialize(name).trim();
+            return plain.isEmpty() ? fallback : plain;
+        } catch (Throwable t) {
+            return fallback;
         }
     }
 

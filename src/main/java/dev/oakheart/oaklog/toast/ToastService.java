@@ -157,8 +157,18 @@ public class ToastService implements Listener {
     private Component liveDisplayName(org.bukkit.inventory.ItemStack stack, String fallback) {
         try {
             if (stack.hasItemMeta()) {
-                Component name = stack.getItemMeta().displayName();
+                org.bukkit.inventory.meta.ItemMeta meta = stack.getItemMeta();
+                // custom_name first (anvil-renamed / explicitly-set), then
+                // item_name (Nexo, EI, and most plugins use this 1.20.5+
+                // component instead of custom_name).
+                Component name = meta.displayName();
                 if (name != null) return name;
+                try {
+                    Component itemName = meta.itemName();
+                    if (itemName != null) return itemName;
+                } catch (NoSuchMethodError ignored) {
+                    // older API
+                }
             }
         } catch (Throwable ignored) {}
         return Component.text(fallback);
