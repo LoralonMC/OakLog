@@ -48,25 +48,29 @@ public class NexoAdapter implements EntryAdapter {
         }
         try {
             nexoItemsClass = Class.forName("com.nexomc.nexo.api.NexoItems");
-            for (Method m : nexoItemsClass.getMethods()) {
-                if (idFromItemMethod == null
-                        && m.getName().equals("idFromItem")
-                        && m.getParameterCount() == 1
-                        && m.getParameterTypes()[0] == ItemStack.class) {
-                    idFromItemMethod = m;
-                }
-                if (itemNamesMethod == null
-                        && (m.getName().equals("itemNames") || m.getName().equals("entries")
-                            || m.getName().equals("idList") || m.getName().equals("getItemNames"))
-                        && m.getParameterCount() == 0
-                        && Collection.class.isAssignableFrom(m.getReturnType())) {
-                    itemNamesMethod = m;
-                }
-            }
+            idFromItemMethod = findMethod(nexoItemsClass, new String[]{"idFromItem"},
+                    new Class<?>[]{ItemStack.class});
+            itemNamesMethod = findMethod(nexoItemsClass,
+                    new String[]{"itemNames", "entries", "idList", "getItemNames"},
+                    new Class<?>[0]);
             return idFromItemMethod != null;
-        } catch (ClassNotFoundException e) {
+        } catch (Throwable t) {
+            logger.log(Level.WARNING, "Nexo adapter unavailable: " + t.getClass().getSimpleName() + " " + t.getMessage());
             return false;
         }
+    }
+
+    private static Method findMethod(Class<?> cls, String[] names, Class<?>[] params) {
+        for (String name : names) {
+            try {
+                return cls.getMethod(name, params);
+            } catch (NoSuchMethodException ignored) {
+                // try next name
+            } catch (Throwable t) {
+                return null;
+            }
+        }
+        return null;
     }
 
     @Override

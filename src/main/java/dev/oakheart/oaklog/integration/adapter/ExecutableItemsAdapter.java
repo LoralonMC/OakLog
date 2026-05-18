@@ -47,38 +47,36 @@ public class ExecutableItemsAdapter implements EntryAdapter {
         }
         try {
             Class<?> apiClass = Class.forName("com.ssomar.score.api.executableitems.ExecutableItemsAPI");
-            Method getManagerMethod = null;
-            for (Method m : apiClass.getMethods()) {
-                if (m.getName().equals("getExecutableItemsManager") && m.getParameterCount() == 0) {
-                    getManagerMethod = m;
-                    break;
-                }
-            }
-            if (getManagerMethod == null) return false;
+            Method getManagerMethod = apiClass.getMethod("getExecutableItemsManager");
             manager = getManagerMethod.invoke(null);
             if (manager == null) return false;
 
-            for (Method m : manager.getClass().getMethods()) {
-                if (idsListMethod == null
-                        && (m.getName().equals("getExecutableItemIdsList")
-                            || m.getName().equals("getExecutableItems")
-                            || m.getName().equals("getAllIds"))
-                        && m.getParameterCount() == 0
-                        && Collection.class.isAssignableFrom(m.getReturnType())) {
-                    idsListMethod = m;
-                }
-                if (idFromItemMethod == null
-                        && (m.getName().equals("getExecutableItemIdFromItemStack")
-                            || m.getName().equals("getIdFromItemStack"))
-                        && m.getParameterCount() == 1
-                        && m.getParameterTypes()[0] == ItemStack.class) {
-                    idFromItemMethod = m;
-                }
-            }
+            idFromItemMethod = findMethod(manager.getClass(),
+                    new String[]{"getExecutableItemIdFromItemStack", "getIdFromItemStack"},
+                    new Class<?>[]{ItemStack.class});
+            idsListMethod = findMethod(manager.getClass(),
+                    new String[]{"getExecutableItemIdsList", "getExecutableItems", "getAllIds"},
+                    new Class<?>[0]);
+
             return idFromItemMethod != null;
-        } catch (Exception e) {
+        } catch (Throwable t) {
+            logger.log(Level.WARNING, "ExecutableItems adapter unavailable: " + t.getClass().getSimpleName() + " " + t.getMessage());
             return false;
         }
+    }
+
+    private static Method findMethod(Class<?> cls, String[] names, Class<?>[] params) {
+        for (String name : names) {
+            try {
+                return cls.getMethod(name, params);
+            } catch (NoSuchMethodException ignored) {
+                // try next name
+            } catch (Throwable t) {
+                // class signature reference can't be loaded; treat as no-match
+                return null;
+            }
+        }
+        return null;
     }
 
     @Override

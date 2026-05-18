@@ -19,7 +19,15 @@ public class AdapterRegistry {
 
     public void register(EntryAdapter adapter) {
         if (adapter == null) return;
-        if (!adapter.isAvailable()) {
+        boolean available;
+        try {
+            available = adapter.isAvailable();
+        } catch (Throwable t) {
+            logger.warning("Adapter '" + adapter.id() + "' isAvailable() threw "
+                    + t.getClass().getSimpleName() + " — skipping. (" + t.getMessage() + ")");
+            return;
+        }
+        if (!available) {
             logger.info("Adapter '" + adapter.id() + "' is not available (backing plugin missing) — skipping.");
             return;
         }
