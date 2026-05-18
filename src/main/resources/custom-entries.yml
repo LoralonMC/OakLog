@@ -24,16 +24,9 @@
 # ============================================================
 
 auto-discover:
-  # OakheartLib-based plugins (Oakheart Project)
-  - namespace: oakpets
-    pdc-key: 'oakpets:pet_voucher_id'
-    category: items
-  - namespace: oaktags
-    pdc-key: 'oaktags:tag_voucher_id'
-    category: items
-  - namespace: oaktools
-    pdc-key: 'oaktools:tool_type'
-    category: items
+  # OakPets, OakTags, OakTools are now handled by dedicated adapters
+  # (registered in OakLog.initializeComponents). They enumerate at startup
+  # so every voucher / tool shows in the log without needing first pickup.
 
   # PhoenixCrates — crate keys
   - namespace: phoenixcrates
