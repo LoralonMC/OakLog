@@ -10,6 +10,8 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
@@ -81,31 +83,34 @@ public class IconRenderer {
             }
             // Apply variant components for synthetic vanilla entries that
             // share one Material across many sub-variants (Goat Horns,
-            // potions, tipped arrows, enchanted books).
+            // potions, tipped arrows, enchanted books, potion effects).
             if (meta != null) {
                 applyGoatHornVariant(entry, meta);
                 applyPotionVariant(entry, meta);
                 applyEnchantmentVariant(entry, meta);
+                applyEffectVariant(entry, meta);
             }
         }
         if (meta == null) return stack;
 
         // For live icons keep the source plugin's display name. For stored
         // icons, decide based on category:
-        //   - BLOCKS / ITEMS: leave displayName unset so Minecraft renders
-        //     the natural material name with its rarity colour.
-        //   - Other categories (biomes, structures, effects, enchantments):
-        //     the icon material is a generic placeholder, so override with
-        //     the entry's stored display name otherwise every entry shows
-        //     up labelled "Grass Block" / "Cobblestone" / "Potion" /
-        //     "Enchanted Book".
+        //   - BLOCKS / ITEMS / EFFECTS / ENCHANTMENTS: leave displayName
+        //     unset so Minecraft renders the natural component-based name.
+        //     For effects + enchantments this means a vanilla-looking potion
+        //     (coloured by the effect) and a vanilla-looking enchanted book
+        //     (glinting + lore line) respectively.
+        //   - BIOMES / STRUCTURES: the icon material is a generic placeholder
+        //     so override with entry.displayName() otherwise every biome
+        //     renders as "Grass Block" and every structure as "Cobblestone".
         // The messages.yml templates take precedence over both when set.
         if (!usedLiveIcon) {
             String nameKey = collected ? "gui.entry.name-collected" : "gui.entry.name-uncollected";
             Optional<Component> name = messages.parse(nameKey, entryTag, dateTag);
             if (name.isPresent()) {
                 meta.displayName(name.get());
-            } else if (entry.category() != Category.BLOCKS && entry.category() != Category.ITEMS) {
+            } else if (entry.category() == Category.BIOMES
+                    || entry.category() == Category.STRUCTURES) {
                 meta.displayName(Component.text(entry.displayName())
                         .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
             }
@@ -193,6 +198,24 @@ public class IconRenderer {
             MusicInstrument instrument = reg.get(new NamespacedKey(entry.namespace(),
                     variant + "_goat_horn"));
             if (instrument != null) inst.setInstrument(instrument);
+        } catch (Throwable ignored) {}
+    }
+
+    private static void applyEffectVariant(Entry entry, ItemMeta meta) {
+        if (entry.category() != Category.EFFECTS) return;
+        if (!(meta instanceof PotionMeta potionMeta)) return;
+        String key = entry.key();
+        if (key == null || !key.startsWith("effect_")) return;
+        String effectKey = key.substring("effect_".length());
+        try {
+            Registry<PotionEffectType> reg = RegistryAccess.registryAccess()
+                    .getRegistry(RegistryKey.MOB_EFFECT);
+            PotionEffectType type = reg.get(new NamespacedKey(entry.namespace(), effectKey));
+            if (type == null) return;
+            // Apply as a custom effect — the potion takes on the effect's
+            // colour and the effect name shows in vanilla lore.
+            potionMeta.addCustomEffect(new PotionEffect(type, 600, 0, false, true, true), true);
+            potionMeta.setColor(type.getColor());
         } catch (Throwable ignored) {}
     }
 

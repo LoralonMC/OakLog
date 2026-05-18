@@ -113,17 +113,23 @@ public class HubGui extends OakLogGui {
         int collected = plugin.getProgressManager().collectedCount(targetUuid);
         int live = plugin.getEntryRegistry().liveCount();
         String percent = live == 0 ? "0.0" : String.format("%.1f", 100.0 * collected / live);
+        org.bukkit.OfflinePlayer offline = Bukkit.getOfflinePlayer(targetUuid);
+        String name = offline.getName() != null ? offline.getName() : "Unknown";
 
         TagResolver[] resolvers = new TagResolver[]{
-                Placeholder.unparsed("player", Bukkit.getOfflinePlayer(targetUuid).getName() != null
-                        ? Bukkit.getOfflinePlayer(targetUuid).getName() : "Unknown"),
+                Placeholder.unparsed("player", name),
                 Placeholder.unparsed("collected", String.valueOf(collected)),
                 Placeholder.unparsed("total", String.valueOf(live)),
                 Placeholder.unparsed("percent", percent)
         };
 
-        inventory.setItem(PLAYER_HEAD_SLOT, iconRenderer.buildButton(
-                Material.PLAYER_HEAD, "gui.hub.player-head-name", "gui.hub.player-head-lore", resolvers));
+        ItemStack head = iconRenderer.buildButton(
+                Material.PLAYER_HEAD, "gui.hub.player-head-name", "gui.hub.player-head-lore", resolvers);
+        if (head.getItemMeta() instanceof org.bukkit.inventory.meta.SkullMeta skull) {
+            skull.setOwningPlayer(offline);
+            head.setItemMeta(skull);
+        }
+        inventory.setItem(PLAYER_HEAD_SLOT, head);
     }
 
     private void renderCategoryButtons() {
