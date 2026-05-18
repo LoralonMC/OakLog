@@ -109,6 +109,25 @@ public class EntryRegistry {
         return entriesById.size();
     }
 
+    public synchronized void addLive(Entry entry) {
+        entriesById.put(entry.id(), entry);
+        entryIdByNamespacedKey.put(entry.namespacedKey(), entry.id());
+        entryIdsByCategory.computeIfAbsent(entry.category(), k -> new ArrayList<>()).add(entry.id());
+        if (!entry.isRetired()) {
+            liveCount++;
+            if (EntryKey.VANILLA.equals(entry.namespace())) {
+                indexVanillaMaterial(entry);
+            }
+            // Re-sort the affected category by display name.
+            entryIdsByCategory.get(entry.category()).sort((a, b) -> {
+                Entry ea = entriesById.get(a);
+                Entry eb = entriesById.get(b);
+                if (ea == null || eb == null) return 0;
+                return ea.displayName().compareToIgnoreCase(eb.displayName());
+            });
+        }
+    }
+
     public synchronized int liveCountFor(Category category) {
         int count = 0;
         for (int id : entryIdsByCategory.getOrDefault(category, Collections.emptyList())) {

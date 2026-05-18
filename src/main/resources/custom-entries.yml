@@ -1,50 +1,72 @@
 # ============================================================
 # CUSTOM ENTRY DEFINITIONS
 # ============================================================
-# Define collection-log entries for custom items from other plugins
-# (OakTools, ExecutableItems, Nexo, or anything else) by listing the
-# PersistentDataContainer (PDC) key they store on the item.
+# Two ways to register custom items into the collection log:
 #
-# Each entry produces one row in the entries table. Items matching the
-# PDC rule are routed to this entry on pickup.
+# 1. `auto-discover:` patterns watch a PDC key. The first time a
+#    player picks up an item carrying that key, OakLog auto-registers
+#    an entry using the actual item's display name, material, and
+#    custom model data. Works out of the box for any PDC-tagged
+#    plugin.
 #
-# Required fields:
-#   namespace:     synthetic namespace for the entry-id (e.g. 'oaktools')
-#   key:           unique key within the namespace (e.g. 'emerald_hammer')
-#   category:      items | blocks
-#   display-name:  text shown in the GUI
-#   pdc-key:       NamespacedKey to read (e.g. 'oaktools:tool_id')
+# 2. `entries:` explicit definitions. Use this when you want to
+#    define the exact namespace, key, display name, and icon ahead of
+#    time — useful for items that aren't normally picked up (e.g. the
+#    Shopkeepers shop creation item).
 #
-# Optional fields:
-#   icon-material:   Bukkit Material for the GUI icon (defaults to BARRIER)
-#   icon-model-data: integer custom model data (for textured icons)
-#   pdc-value:       expected PDC value; "*" matches any value
-#
-# Example (commented out — uncomment and adjust for your items):
-#
-# entries:
-#   - namespace: oaktools
-#     key: emerald_hammer
-#     category: items
-#     display-name: Emerald Hammer
-#     icon-material: NETHERITE_PICKAXE
-#     pdc-key: oaktools:tool_id
-#     pdc-value: emerald_hammer
-#
-#   - namespace: nexo
-#     key: plushie_axolotl
-#     category: items
-#     display-name: Axolotl Plushie
-#     icon-material: PLAYER_HEAD
-#     pdc-key: nexo:id
-#     pdc-value: plushie_axolotl
-#
-#   - namespace: executableitems
-#     key: relic_of_oak
-#     category: items
-#     display-name: Relic of Oak
-#     icon-material: NETHER_STAR
-#     pdc-key: executableitems:executableitem_id
-#     pdc-value: relic_of_oak
+# Both sections are optional. Auto-discover entries appear in the log
+# only after the first time someone collects them; explicit entries
+# show up at startup with the configured display name even if no one
+# has touched them yet.
 
-entries: []
+# ============================================================
+# AUTO-DISCOVER (recommended for most plugins)
+# ============================================================
+
+auto-discover:
+  # OakheartLib-based plugins (Oakheart Project)
+  - namespace: oakpets
+    pdc-key: 'oakpets:pet_voucher_id'
+    category: items
+  - namespace: oaktags
+    pdc-key: 'oaktags:tag_voucher_id'
+    category: items
+  - namespace: oaktools
+    pdc-key: 'oaktools:tool_type'
+    category: items
+
+  # PhoenixCrates — crate keys
+  - namespace: phoenixcrates
+    pdc-key: 'phoenixcrates:key'
+    category: items
+
+  # NekoTraps — animal trap items
+  - namespace: nekotraps
+    pdc-key: 'nekotraps:trap'
+    category: items
+
+# ============================================================
+# EXPLICIT ENTRIES
+# ============================================================
+# Required fields: namespace, key, category, display-name, pdc-key
+# Optional: icon-material, icon-model-data, pdc-value ("*" matches any)
+
+entries:
+  # Shopkeepers — the shop creation item (creates a player shop when used)
+  - namespace: shopkeepers
+    key: shop_creation_item
+    category: items
+    display-name: 'Shopkeeper Wand'
+    icon-material: VILLAGER_SPAWN_EGG
+    pdc-key: 'shopkeepers:creator'
+    pdc-value: '*'
+
+# ============================================================
+# NOTES
+# ============================================================
+# - PDC keys are case-sensitive. Most plugins use lowercase.
+# - If a plugin uses a different PDC key than the default listed
+#   above, edit the entry and run `/oaklog reload`.
+# - To find a plugin's PDC key: pick up one of its items, run `/oaklog
+#   info ...` is not implemented yet for unknown items; check the
+#   plugin's documentation or source for the NamespacedKey it uses.
