@@ -90,7 +90,9 @@ public class IconRenderer {
             lore.add(Component.empty());
         }
         String loreKey = collected ? "gui.entry.lore-collected" : "gui.entry.lore-uncollected";
-        messages.parse(loreKey, entryTag, dateTag).ifPresent(lore::add);
+        messages.parse(loreKey, entryTag, dateTag)
+                .map(c -> c.decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE))
+                .ifPresent(lore::add);
         meta.lore(lore);
 
         // Stored/template icons get all hide flags. Live custom icons keep
@@ -116,7 +118,10 @@ public class IconRenderer {
 
         if (loreKey != null) {
             List<Component> lore = new ArrayList<>();
-            messages.parse(loreKey, resolvers).ifPresent(lore::add);
+            messages.parse(loreKey, resolvers)
+                    .map(c -> c.decorationIfAbsent(net.kyori.adventure.text.format.TextDecoration.ITALIC,
+                            net.kyori.adventure.text.format.TextDecoration.State.FALSE))
+                    .ifPresent(lore::add);
             meta.lore(lore);
         }
 
