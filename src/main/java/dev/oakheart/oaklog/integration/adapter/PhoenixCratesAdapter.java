@@ -142,6 +142,9 @@ public class PhoenixCratesAdapter implements EntryAdapter {
     @Override
     public String detect(ItemStack stack) {
         if (stack == null || stack.getType() == Material.AIR) return null;
+        // Crate keys always have meta (display name + CMD), so vanilla items
+        // skip the signature computation entirely.
+        if (!stack.hasItemMeta()) return null;
         String signature = signatureOf(stack);
         if (signature == null) return null;
         String id = signatureToId.get(signature);

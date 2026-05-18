@@ -82,6 +82,7 @@ public class PdcAdapter implements EntryAdapter {
 
     @Override
     public String detect(ItemStack stack) {
+        if (stack == null || !stack.hasItemMeta()) return null;
         ItemMeta meta = stack.getItemMeta();
         if (meta == null) return null;
         PersistentDataContainer pdc = meta.getPersistentDataContainer();

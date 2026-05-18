@@ -97,6 +97,7 @@ public class ShopkeepersAdapter implements EntryAdapter {
     @Override
     public String detect(ItemStack stack) {
         if (isShopCreationItemMethod == null || stack == null) return null;
+        if (!stack.hasItemMeta()) return null;
         try {
             Object result = isShopCreationItemMethod.invoke(null, stack);
             if (result instanceof Boolean b && b) {

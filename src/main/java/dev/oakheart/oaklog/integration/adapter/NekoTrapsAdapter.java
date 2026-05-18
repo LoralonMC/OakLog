@@ -94,6 +94,7 @@ public class NekoTrapsAdapter implements EntryAdapter {
     @Override
     public String detect(ItemStack stack) {
         if (manager == null || isTrapMethod == null || stack == null) return null;
+        if (!stack.hasItemMeta()) return null;
         try {
             Object result = isTrapMethod.invoke(manager, stack);
             if (result instanceof Boolean b && b) {

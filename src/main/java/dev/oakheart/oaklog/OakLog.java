@@ -133,15 +133,18 @@ public final class OakLog extends JavaPlugin {
         entryRegistry = new EntryRegistry();
 
         adapterRegistry = new AdapterRegistry(getLogger());
-        adapterRegistry.register(new NexoAdapter(this));
-        adapterRegistry.register(new ExecutableItemsAdapter(this));
-        adapterRegistry.register(new OakPetsAdapter(this));
-        adapterRegistry.register(new OakTagsAdapter(this));
-        adapterRegistry.register(new OakToolsAdapter(this));
-        adapterRegistry.register(new PhoenixCratesAdapter(this));
-        adapterRegistry.register(new NekoTrapsAdapter(this));
-        adapterRegistry.register(new ShopkeepersAdapter(this));
-        adapterRegistry.register(new PdcAdapter(this));
+        // Order matters: first-hit-wins on detect(), so cheap PDC-based
+        // adapters run first to short-circuit before the more expensive
+        // reflection / signature-computing ones.
+        adapterRegistry.register(new OakPetsAdapter(this));         // PDC lookup
+        adapterRegistry.register(new OakTagsAdapter(this));         // PDC lookup
+        adapterRegistry.register(new OakToolsAdapter(this));        // PDC lookup
+        adapterRegistry.register(new NexoAdapter(this));            // Nexo's internal lookup
+        adapterRegistry.register(new ExecutableItemsAdapter(this)); // reflection (cached methods)
+        adapterRegistry.register(new PhoenixCratesAdapter(this));   // signature computation
+        adapterRegistry.register(new NekoTrapsAdapter(this));       // reflection isTrap
+        adapterRegistry.register(new ShopkeepersAdapter(this));     // reflection isShopCreationItem
+        adapterRegistry.register(new PdcAdapter(this));             // generic patterns (fallback)
 
         setsConfig = new SetsConfig(this);
         setsConfig.load();

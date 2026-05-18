@@ -103,6 +103,7 @@ public class NexoAdapter implements EntryAdapter {
 
     @Override
     public String detect(ItemStack stack) {
+        if (stack == null || !stack.hasItemMeta()) return null;
         try {
             String id = NexoItems.idFromItem(stack);
             if (id == null || id.isBlank()) return null;

@@ -32,12 +32,12 @@ public class ItemBlockListener implements Listener {
         ItemStack oldItem = event.getOldItemStack();
         if (newItem == null || newItem.getType().isAir()) return;
 
-        // Skip resync / count-change events. We want to fire only when an item
-        // *type* actually appears (slot was empty or held a different type
-        // before). This rejects "your stack of dirt went from 32 to 48" and
-        // the spurious resync events Paper sometimes fires on container open.
-        if (oldItem != null && !oldItem.getType().isAir()
-                && oldItem.getType() == newItem.getType()) {
+        // Skip resync / count-change events. ItemStack.isSimilar compares
+        // material AND meta but ignores amount — so resyncs (same item +
+        // meta) and stack growth (same item, more of it) are filtered out,
+        // while swapping one custom item for another with the same material
+        // (e.g. two different Nexo PLAYER_HEAD plushies) still fires.
+        if (oldItem != null && !oldItem.getType().isAir() && oldItem.isSimilar(newItem)) {
             return;
         }
 

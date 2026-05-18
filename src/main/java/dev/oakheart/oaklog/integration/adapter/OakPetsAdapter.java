@@ -139,6 +139,7 @@ public class OakPetsAdapter implements EntryAdapter {
 
     @Override
     public String detect(ItemStack stack) {
+        if (stack == null || !stack.hasItemMeta()) return null;
         try {
             ItemMeta meta = stack.getItemMeta();
             if (meta == null) return null;

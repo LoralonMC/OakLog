@@ -268,6 +268,7 @@ public class ExecutableItemsAdapter implements EntryAdapter {
     @Override
     public String detect(ItemStack stack) {
         if (manager == null || getExecutableItemMethod == null) return null;
+        if (stack == null || !stack.hasItemMeta()) return null;
         try {
             Object result = getExecutableItemMethod.invoke(manager, stack);
             if (!(result instanceof Optional<?> opt) || opt.isEmpty()) return null;
