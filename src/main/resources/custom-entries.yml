@@ -28,13 +28,8 @@ auto-discover:
   # (registered in OakLog.initializeComponents). They enumerate at startup
   # so every voucher / tool shows in the log without needing first pickup.
 
-  # PhoenixCrates is now handled by a dedicated adapter that enumerates
-  # every crate key via PhoenixCratesAPI at startup.
-
-  # NekoTraps — animal trap items
-  - namespace: nekotraps
-    pdc-key: 'nekotraps:trap'
-    category: items
+  # PhoenixCrates, NekoTraps, and Shopkeepers are now handled by
+  # dedicated adapters (see OakLog/integration/adapter/*Adapter.java).
 
 # ============================================================
 # EXPLICIT ENTRIES
@@ -42,15 +37,15 @@ auto-discover:
 # Required fields: namespace, key, category, display-name, pdc-key
 # Optional: icon-material, icon-model-data, pdc-value ("*" matches any)
 
-entries:
-  # Shopkeepers — the shop creation item (creates a player shop when used)
-  - namespace: shopkeepers
-    key: shop_creation_item
-    category: items
-    display-name: 'Shopkeeper Wand'
-    icon-material: VILLAGER_SPAWN_EGG
-    pdc-key: 'shopkeepers:creator'
-    pdc-value: '*'
+entries: []
+# Example:
+#   - namespace: myplugin
+#     key: relic
+#     category: items
+#     display-name: 'Ancient Relic'
+#     icon-material: NETHER_STAR
+#     pdc-key: 'myplugin:relic_id'
+#     pdc-value: '*'
 
 # ============================================================
 # NOTES
