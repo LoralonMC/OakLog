@@ -76,6 +76,10 @@ public class OakToolsAdapter implements EntryAdapter {
     @Override
     public List<EntryDescriptor> enumerate() {
         if (itemFactory == null || toolTypeValues == null) return List.of();
+        if (nexoNotReady()) {
+            logger.fine("OakTools adapter: deferring enumeration until Nexo loads");
+            return List.of();
+        }
         try {
             List<EntryDescriptor> out = new ArrayList<>();
             for (Object toolType : toolTypeValues) {
@@ -171,5 +175,14 @@ public class OakToolsAdapter implements EntryAdapter {
             if (p.getClass().getName().startsWith("dev.oakheart.oaktools")) return p;
         }
         return null;
+    }
+
+    private boolean nexoNotReady() {
+        if (plugin.getServer().getPluginManager().getPlugin("Nexo") == null) return false;
+        try {
+            return com.nexomc.nexo.api.NexoItems.itemNames().isEmpty();
+        } catch (Throwable t) {
+            return false;
+        }
     }
 }

@@ -83,6 +83,10 @@ public class OakPetsAdapter implements EntryAdapter {
     @Override
     public List<EntryDescriptor> enumerate() {
         if (api == null) return List.of();
+        if (nexoNotReady()) {
+            logger.fine("OakPets adapter: deferring enumeration until Nexo loads");
+            return List.of();
+        }
         try {
             Object result = getAllPetsMethod.invoke(api);
             if (!(result instanceof Collection<?> coll)) return List.of();
@@ -163,5 +167,14 @@ public class OakPetsAdapter implements EntryAdapter {
             if (p.getClass().getName().startsWith("dev.oakheart.oakpets")) return p;
         }
         return null;
+    }
+
+    private boolean nexoNotReady() {
+        if (plugin.getServer().getPluginManager().getPlugin("Nexo") == null) return false;
+        try {
+            return com.nexomc.nexo.api.NexoItems.itemNames().isEmpty();
+        } catch (Throwable t) {
+            return false;
+        }
     }
 }
