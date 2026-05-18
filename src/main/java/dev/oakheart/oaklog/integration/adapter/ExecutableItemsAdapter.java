@@ -134,25 +134,11 @@ public class ExecutableItemsAdapter implements EntryAdapter {
                 eiInterface = result;
             }
 
-            if (buildItemOnInterfaceMethod == null) {
-                buildItemOnInterfaceMethod = findMethod(eiInterface.getClass(),
-                        new String[]{"buildItem", "getItemStack", "build", "getItem"},
-                        new Class<?>[0]);
-                if (buildItemOnInterfaceMethod == null) {
-                    buildItemOnInterfaceMethod = findMethod(eiInterface.getClass(),
-                            new String[]{"buildItem", "getItemStack"},
-                            new Class<?>[]{int.class});
-                    if (buildItemOnInterfaceMethod != null) {
-                        Object built = buildItemOnInterfaceMethod.invoke(eiInterface, 1);
-                        if (built instanceof ItemStack stack) {
-                            iconCache.putIfAbsent(id, stack.clone());
-                            return Optional.of(stack);
-                        }
-                    }
-                    return Optional.empty();
-                }
-            }
-            Object built = buildItemOnInterfaceMethod.invoke(eiInterface);
+            // The official ExecutableItemInterface declares
+            //   ItemStack buildItem(int amount, Optional<Player> creator);
+            // Try that first, then the zero-arg and single-int fallbacks for
+            // older builds.
+            Object built = tryBuildItem(eiInterface);
             if (built instanceof ItemStack stack) {
                 iconCache.putIfAbsent(id, stack.clone());
                 return Optional.of(stack);
@@ -162,6 +148,39 @@ public class ExecutableItemsAdapter implements EntryAdapter {
             warnOnce("ExecutableItems resolveLiveIcon failed: " + t.getMessage());
             return Optional.empty();
         }
+    }
+
+    private Object tryBuildItem(Object eiInterface) throws Exception {
+        // Method 1: buildItem(int, Optional<Player>) — documented signature
+        if (buildItemOnInterfaceMethod == null) {
+            buildItemOnInterfaceMethod = findMethod(eiInterface.getClass(),
+                    new String[]{"buildItem"},
+                    new Class<?>[]{int.class, Optional.class});
+            if (buildItemOnInterfaceMethod != null) {
+                return buildItemOnInterfaceMethod.invoke(eiInterface, 1, Optional.empty());
+            }
+        } else if (buildItemOnInterfaceMethod.getParameterCount() == 2) {
+            return buildItemOnInterfaceMethod.invoke(eiInterface, 1, Optional.empty());
+        }
+
+        // Method 2: zero-arg buildItem / getItemStack / build / getItem
+        Method zeroArg = findMethod(eiInterface.getClass(),
+                new String[]{"buildItem", "getItemStack", "build", "getItem"},
+                new Class<?>[0]);
+        if (zeroArg != null) {
+            buildItemOnInterfaceMethod = zeroArg;
+            return zeroArg.invoke(eiInterface);
+        }
+
+        // Method 3: single-int buildItem
+        Method intArg = findMethod(eiInterface.getClass(),
+                new String[]{"buildItem", "getItemStack"},
+                new Class<?>[]{int.class});
+        if (intArg != null) {
+            buildItemOnInterfaceMethod = intArg;
+            return intArg.invoke(eiInterface, 1);
+        }
+        return null;
     }
 
     private Plugin findHostPlugin() {

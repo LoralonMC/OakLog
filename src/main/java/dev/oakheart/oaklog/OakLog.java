@@ -144,7 +144,7 @@ public final class OakLog extends JavaPlugin {
         iconRenderer = new IconRenderer(messageManager, dateFormat, adapterRegistry);
         auditLog = new AuditLog(this);
 
-        toastService = new ToastService(this, configManager, entryRegistry);
+        toastService = new ToastService(this, configManager, entryRegistry, adapterRegistry);
         toastService.initialize();
 
         SearchInput chat = new ChatSearchInput(this);

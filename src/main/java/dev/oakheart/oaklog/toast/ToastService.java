@@ -13,6 +13,7 @@ import com.github.retrooper.packetevents.resources.ResourceLocation;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerUpdateAdvancements;
 import dev.oakheart.oaklog.OakLog;
 import dev.oakheart.oaklog.config.ConfigManager;
+import dev.oakheart.oaklog.integration.adapter.AdapterRegistry;
 import dev.oakheart.oaklog.model.Category;
 import dev.oakheart.oaklog.model.Entry;
 import dev.oakheart.oaklog.model.PlayerProgress;
@@ -20,6 +21,7 @@ import dev.oakheart.oaklog.model.PlayerProgress.ToastState;
 import dev.oakheart.oaklog.progress.ProgressEvent;
 import dev.oakheart.oaklog.progress.ProgressManager;
 import dev.oakheart.oaklog.registry.EntryRegistry;
+import io.github.retrooper.packetevents.util.SpigotConversionUtil;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -39,14 +41,17 @@ public class ToastService implements Listener {
     private final OakLog plugin;
     private final ConfigManager configManager;
     private final EntryRegistry registry;
+    private final AdapterRegistry adapterRegistry;
     private final Logger logger;
     private boolean available;
     private boolean warned;
 
-    public ToastService(OakLog plugin, ConfigManager configManager, EntryRegistry registry) {
+    public ToastService(OakLog plugin, ConfigManager configManager, EntryRegistry registry,
+                        AdapterRegistry adapterRegistry) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.registry = registry;
+        this.adapterRegistry = adapterRegistry;
         this.logger = plugin.getLogger();
     }
 
@@ -128,10 +133,85 @@ public class ToastService implements Listener {
     }
 
     private void send(Player player, Entry entry, AdvancementType type, String title, String description) {
+        ItemStack icon = resolveIconForToast(entry);
+        if (icon != null) {
+            sendRawWithIcon(player, icon, type, title, description);
+            return;
+        }
         String materialName = entry.iconMaterial() != null
                 ? entry.iconMaterial().toLowerCase()
                 : "barrier";
         sendRaw(player, "minecraft:" + materialName, type, title, description);
+    }
+
+    private ItemStack resolveIconForToast(Entry entry) {
+        try {
+            return adapterRegistry.resolveLiveIcon(entry.namespacedKey())
+                    .map(SpigotConversionUtil::fromBukkitItemStack)
+                    .orElse(null);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private void sendRawWithIcon(Player player, ItemStack icon, AdvancementType type,
+                                 String title, String description) {
+        try {
+            ResourceLocation key = new ResourceLocation("oaklog", "toast/" + UUID.randomUUID());
+            AdvancementDisplay display = new AdvancementDisplay(
+                    Component.text(title),
+                    Component.text(description),
+                    icon,
+                    type,
+                    null,
+                    true,
+                    false,
+                    0f,
+                    0f
+            );
+
+            String criterionId = "oaklog_done";
+            Advancement advancement = new Advancement(
+                    null,
+                    display,
+                    java.util.List.of(criterionId),
+                    java.util.List.of(java.util.List.of(criterionId)),
+                    false
+            );
+            AdvancementHolder holder = new AdvancementHolder(key, advancement);
+
+            Map<String, AdvancementProgress.CriterionProgress> criteria = new HashMap<>();
+            criteria.put(criterionId, new AdvancementProgress.CriterionProgress(System.currentTimeMillis()));
+            AdvancementProgress progress = new AdvancementProgress(criteria);
+
+            WrapperPlayServerUpdateAdvancements add = new WrapperPlayServerUpdateAdvancements(
+                    false,
+                    java.util.List.of(holder),
+                    Collections.emptySet(),
+                    Map.of(key, progress),
+                    true
+            );
+            PacketEvents.getAPI().getPlayerManager().sendPacket(player, add);
+            plugin.debug("Toast packet sent: player=" + player.getName()
+                    + " icon=<live custom item> frame=" + type + " title=\"" + title + "\"");
+
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                try {
+                    WrapperPlayServerUpdateAdvancements remove = new WrapperPlayServerUpdateAdvancements(
+                            false,
+                            Collections.emptyList(),
+                            Set.of(key),
+                            Collections.emptyMap(),
+                            true
+                    );
+                    PacketEvents.getAPI().getPlayerManager().sendPacket(player, remove);
+                } catch (Throwable t) {
+                    logger.warning("Failed to send toast cleanup packet: " + t);
+                }
+            }, 2L);
+        } catch (Throwable t) {
+            logger.log(java.util.logging.Level.WARNING, "Failed to send custom-icon toast", t);
+        }
     }
 
     public void sendRaw(Player player, String iconNamespacedName, AdvancementType type, String title, String description) {
