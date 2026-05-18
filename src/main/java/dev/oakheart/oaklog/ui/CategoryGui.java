@@ -127,12 +127,23 @@ public class CategoryGui extends OakLogGui {
             String nameKey = e.getValue() == this.category ? "gui.tab.active-name" : "gui.tab.name";
             TagResolver tag = Placeholder.unparsed("category",
                     e.getValue().name().charAt(0) + e.getValue().name().substring(1).toLowerCase(Locale.ROOT));
-            inventory.setItem(e.getKey(), iconRenderer.buildButton(icon, nameKey, null, tag));
+            org.bukkit.inventory.ItemStack tabIcon = iconRenderer.buildButton(icon, nameKey, null, tag);
+            if (e.getValue() == this.category) {
+                addEnchantGlint(tabIcon);
+            }
+            inventory.setItem(e.getKey(), tabIcon);
         }
         inventory.setItem(BTN_SEARCH, iconRenderer.buildButton(
                 Material.SPYGLASS, "gui.button.search", null));
         inventory.setItem(BTN_BACK, iconRenderer.buildButton(
                 Material.ARROW, "gui.button.back", null));
+    }
+
+    private static void addEnchantGlint(org.bukkit.inventory.ItemStack stack) {
+        org.bukkit.inventory.meta.ItemMeta meta = stack.getItemMeta();
+        if (meta == null) return;
+        meta.setEnchantmentGlintOverride(true);
+        stack.setItemMeta(meta);
     }
 
     private void renderEntries() {

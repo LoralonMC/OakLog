@@ -86,6 +86,13 @@ public class OakToolsAdapter implements EntryAdapter {
                 String enumName = (String) toolTypeNameMethod.invoke(toolType);
                 String id = enumName.toLowerCase(Locale.ROOT);
 
+                // SICKLE has six per-material variants in Nexo (wooden,
+                // stone, iron, golden, diamond, netherite) but OakTools
+                // models it as a single ToolType. Skip it so the Nexo
+                // sickle entries surface in the log instead of one
+                // untextured "Sickle".
+                if (id.equals("sickle")) continue;
+
                 ItemStack tool = buildTool(toolType);
                 String displayName;
                 String materialName;

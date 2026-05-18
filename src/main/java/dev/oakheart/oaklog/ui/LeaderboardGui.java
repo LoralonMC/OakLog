@@ -79,18 +79,29 @@ public class LeaderboardGui extends OakLogGui {
     }
 
     private void renderTabs() {
-        inventory.setItem(TAB_TOTAL, iconRenderer.buildButton(
+        ItemStack totalTab = iconRenderer.buildButton(
                 scope == null ? Material.LIME_DYE : Material.WHITE_DYE,
-                "gui.leaderboard.tab-total", null));
+                "gui.leaderboard.tab-total", null);
+        if (scope == null) addEnchantGlint(totalTab);
+        inventory.setItem(TAB_TOTAL, totalTab);
         for (Map.Entry<Integer, Category> e : TAB_CATEGORY.entrySet()) {
             Material icon = CATEGORY_ICONS.get(e.getValue());
             String key = scope == e.getValue() ? "gui.leaderboard.tab-active" : "gui.leaderboard.tab";
             TagResolver tag = Placeholder.unparsed("category",
                     e.getValue().name().charAt(0) + e.getValue().name().substring(1).toLowerCase(Locale.ROOT));
-            inventory.setItem(e.getKey(), iconRenderer.buildButton(icon, key, null, tag));
+            ItemStack tab = iconRenderer.buildButton(icon, key, null, tag);
+            if (scope == e.getValue()) addEnchantGlint(tab);
+            inventory.setItem(e.getKey(), tab);
         }
         inventory.setItem(BTN_BACK, iconRenderer.buildButton(
                 Material.OAK_DOOR, "gui.button.back-to-hub", null));
+    }
+
+    private static void addEnchantGlint(ItemStack stack) {
+        ItemMeta meta = stack.getItemMeta();
+        if (meta == null) return;
+        meta.setEnchantmentGlintOverride(true);
+        stack.setItemMeta(meta);
     }
 
     private void renderTop() {

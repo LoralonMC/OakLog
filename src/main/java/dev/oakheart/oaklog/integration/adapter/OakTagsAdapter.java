@@ -112,8 +112,28 @@ public class OakTagsAdapter implements EntryAdapter {
             Object result = getAllTagsMethod.invoke(api);
             if (!(result instanceof Collection<?> coll)) return List.of();
 
+            // Cache the UnlockType getter once and the GRANTED enum value so we
+            // can filter out permission-based tags (they don't have voucher
+            // items players collect).
+            Method tagInfoUnlockTypeMethod = null;
+            Object grantedEnum = null;
+            try {
+                Class<?> tagInfoClass = Class.forName("dev.oakheart.oaktags.api.TagInfo",
+                        false, host.getClass().getClassLoader());
+                tagInfoUnlockTypeMethod = tagInfoClass.getMethod("unlockType");
+                Class<?> unlockTypeClass = Class.forName("dev.oakheart.oaktags.model.UnlockType",
+                        false, host.getClass().getClassLoader());
+                grantedEnum = Enum.valueOf((Class<Enum>) unlockTypeClass, "GRANTED");
+            } catch (Throwable ignored) {
+                // older OakTags without UnlockType — fall through and enumerate everything
+            }
+
             List<EntryDescriptor> out = new ArrayList<>();
             for (Object tagInfo : coll) {
+                if (tagInfoUnlockTypeMethod != null && grantedEnum != null) {
+                    Object unlockType = tagInfoUnlockTypeMethod.invoke(tagInfo);
+                    if (unlockType != grantedEnum) continue; // skip permission tags
+                }
                 String tagId = ((String) tagInfoIdMethod.invoke(tagInfo)).toLowerCase(Locale.ROOT);
                 String displayMm = (String) tagInfoDisplayMethod.invoke(tagInfo);
                 Material material = (Material) tagInfoMaterialMethod.invoke(tagInfo);

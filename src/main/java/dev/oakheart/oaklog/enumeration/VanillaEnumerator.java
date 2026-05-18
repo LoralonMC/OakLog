@@ -9,6 +9,7 @@ import dev.oakheart.oaklog.variants.VariantResolvers;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.Material;
+import org.bukkit.MusicInstrument;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.block.Biome;
@@ -59,6 +60,12 @@ public class VanillaEnumerator {
             // but isItem=false and can't actually be collected.
             if (!material.isItem()) continue;
 
+            // Goat Horn: split into one entry per instrument variant.
+            if (material == Material.GOAT_HORN) {
+                enumerateGoatHornVariants(out);
+                continue;
+            }
+
             boolean isBlock = material.isBlock();
             Category category = isBlock ? Category.BLOCKS : Category.ITEMS;
             String display = EntryKey.displayNameFromKey(keyName);
@@ -68,6 +75,26 @@ public class VanillaEnumerator {
                     category,
                     display,
                     material.name(),
+                    null,
+                    null
+            ));
+        }
+    }
+
+    private void enumerateGoatHornVariants(List<EntryDescriptor> out) {
+        Registry<MusicInstrument> instruments =
+                RegistryAccess.registryAccess().getRegistry(RegistryKey.INSTRUMENT);
+        for (MusicInstrument instrument : instruments) {
+            NamespacedKey nk = instruments.getKey(instrument);
+            if (nk == null) continue;
+            String variant = nk.getKey().replace("_goat_horn", "");
+            String displayVariant = EntryKey.displayNameFromKey(variant);
+            out.add(new EntryDescriptor(
+                    EntryKey.VANILLA,
+                    "goat_horn_" + variant,
+                    Category.ITEMS,
+                    displayVariant + " Goat Horn",
+                    "GOAT_HORN",
                     null,
                     null
             ));

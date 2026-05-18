@@ -46,6 +46,7 @@ detection:
     - command_block
     - chain_command_block
     - repeating_command_block
+    - command_block_minecart
     - structure_block
     - structure_void
     - jigsaw
@@ -54,6 +55,9 @@ detection:
     - barrier
     - light
     - '*_spawn_egg'
+    # No-effect "default" potion / arrow variants — players can't normally obtain these
+    - '*uncraftable_potion'
+    - 'uncraftable_tipped_arrow'
 
   # Exclude specific entries by their full namespacedKey ('namespace:key').
   # Useful for hiding texture-only / UI / template items from custom-item
@@ -93,10 +97,13 @@ detection:
     - 'nexo:my_claims_*'
 
     # ===== Duplicates with OakTools (oaktools:* adapter wins) =====
+    # Sickle variants are kept as Nexo entries because OakTools has only one
+    # SICKLE ToolType but Nexo defines six per-material variants (wooden,
+    # stone, iron, golden, diamond, netherite). The OakTools adapter skips
+    # SICKLE so the Nexo sickles render with their proper per-tier textures.
     - 'nexo:file'
     - 'nexo:trowel'
     - 'nexo:wand'
-    - 'nexo:*_sickle'
 
     # ===== Duplicates with PhoenixCrates (phoenixcrates:* wins) =====
     - 'nexo:*_crate_key'
