@@ -95,13 +95,23 @@ public class IconRenderer {
             name.ifPresent(meta::displayName);
         } else {
             // Live-icon path: if the source plugin built the item without
-            // setting a display name (some Nexo items omit `itemname:`),
-            // the GUI would fall back to the bare Material name ("Paper").
-            // Use the entry's stored display name as a safety net.
-            Component liveName = meta.displayName();
-            Component liveItemName = null;
-            try { liveItemName = meta.itemName(); } catch (NoSuchMethodError ignored) {}
-            if (liveName == null && liveItemName == null) {
+            // setting an explicit name component (some Nexo items omit
+            // `itemname:`), the GUI would render Minecraft's default
+            // translation — which is the bare material name ("Paper",
+            // "Wooden Hoe", etc.) and almost never what the player should
+            // see. Use the entry's stored display name as a safety net.
+            //
+            // displayName() / itemName() returning a Component isn't enough
+            // on its own — Paper synthesises a translatable Component for
+            // items with no explicit name. The presence checks are the
+            // reliable signal.
+            boolean hasExplicitName;
+            try {
+                hasExplicitName = meta.hasDisplayName() || meta.hasItemName();
+            } catch (NoSuchMethodError e) {
+                hasExplicitName = meta.displayName() != null;
+            }
+            if (!hasExplicitName) {
                 meta.displayName(Component.text(entry.displayName())
                         .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
             }

@@ -126,11 +126,14 @@ public class VanillaEnumerator {
             if (nk == null) continue;
             String variant = nk.getKey().replace("_goat_horn", "");
             String displayVariant = EntryKey.displayNameFromKey(variant);
+            // Display starts with "Goat Horn" so the eight variants sort
+            // together under "G" instead of being spread across the
+            // alphabet by their instrument letter.
             out.add(new EntryDescriptor(
                     EntryKey.VANILLA,
                     "goat_horn_" + variant,
                     Category.ITEMS,
-                    displayVariant + " Goat Horn",
+                    "Goat Horn - " + displayVariant,
                     "GOAT_HORN",
                     null,
                     null
