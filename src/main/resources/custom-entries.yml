@@ -28,10 +28,8 @@ auto-discover:
   # (registered in OakLog.initializeComponents). They enumerate at startup
   # so every voucher / tool shows in the log without needing first pickup.
 
-  # PhoenixCrates — crate keys
-  - namespace: phoenixcrates
-    pdc-key: 'phoenixcrates:key'
-    category: items
+  # PhoenixCrates is now handled by a dedicated adapter that enumerates
+  # every crate key via PhoenixCratesAPI at startup.
 
   # NekoTraps — animal trap items
   - namespace: nekotraps

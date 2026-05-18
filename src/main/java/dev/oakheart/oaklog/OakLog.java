@@ -29,6 +29,7 @@ import dev.oakheart.oaklog.integration.adapter.OakPetsAdapter;
 import dev.oakheart.oaklog.integration.adapter.OakTagsAdapter;
 import dev.oakheart.oaklog.integration.adapter.OakToolsAdapter;
 import dev.oakheart.oaklog.integration.adapter.PdcAdapter;
+import dev.oakheart.oaklog.integration.adapter.PhoenixCratesAdapter;
 import dev.oakheart.oaklog.leaderboard.LeaderboardManager;
 import dev.oakheart.oaklog.progress.ProgressManager;
 import dev.oakheart.oaklog.registry.EntryRegistry;
@@ -135,6 +136,7 @@ public final class OakLog extends JavaPlugin {
         adapterRegistry.register(new OakPetsAdapter(this));
         adapterRegistry.register(new OakTagsAdapter(this));
         adapterRegistry.register(new OakToolsAdapter(this));
+        adapterRegistry.register(new PhoenixCratesAdapter(this));
         adapterRegistry.register(new PdcAdapter(this));
 
         setsConfig = new SetsConfig(this);

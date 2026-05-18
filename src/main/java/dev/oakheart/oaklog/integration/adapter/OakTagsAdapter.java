@@ -15,6 +15,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,6 +52,8 @@ public class OakTagsAdapter implements EntryAdapter {
     private Method tagInfoDisplayMethod;
     private Method tagInfoMaterialMethod;
     private Method tagInfoLoreMethod;
+    private Constructor<?> voucherCtor;
+    private Method voucherBuildMethod;
 
     private final Map<String, ItemStack> iconCache = new ConcurrentHashMap<>();
 
@@ -80,6 +83,17 @@ public class OakTagsAdapter implements EntryAdapter {
             tagInfoDisplayMethod = tagInfoClass.getMethod("display");
             tagInfoMaterialMethod = tagInfoClass.getMethod("material");
             tagInfoLoreMethod = tagInfoClass.getMethod("lore");
+
+            // TagVoucherBuilder is optional — present on OakTags builds that
+            // shipped after the OakLog integration. If missing, fall back to
+            // the TagInfo-based icon.
+            try {
+                Class<?> builderClass = Class.forName("dev.oakheart.oaktags.api.TagVoucherBuilder", false, cl);
+                voucherCtor = builderClass.getConstructor(String.class);
+                voucherBuildMethod = builderClass.getMethod("build");
+            } catch (ClassNotFoundException ignored) {
+                // older OakTags — TagInfo fallback handles it
+            }
             return true;
         } catch (Throwable t) {
             logger.log(Level.FINE, "OakTags adapter unavailable: " + t.getClass().getSimpleName());
@@ -109,7 +123,12 @@ public class OakTagsAdapter implements EntryAdapter {
                         .serialize(displayComp).trim();
                 if (plainDisplay.isEmpty()) plainDisplay = tagId;
 
-                ItemStack icon = buildIcon(material, displayComp, loreLines, tagId);
+                ItemStack icon = buildVoucher(tagId);
+                if (icon == null) {
+                    // Fallback: synthesise from TagInfo data (older OakTags
+                    // without TagVoucherBuilder).
+                    icon = buildIcon(material, displayComp, loreLines, tagId);
+                }
                 iconCache.put(tagId, icon);
 
                 out.add(new EntryDescriptor(
@@ -153,6 +172,17 @@ public class OakTagsAdapter implements EntryAdapter {
         String id = entryNamespacedKey.substring(NAMESPACE.length() + 1);
         ItemStack cached = iconCache.get(id);
         return cached == null ? Optional.empty() : Optional.of(cached.clone());
+    }
+
+    private ItemStack buildVoucher(String tagId) {
+        if (voucherCtor == null || voucherBuildMethod == null) return null;
+        try {
+            Object builder = voucherCtor.newInstance(tagId);
+            Object built = voucherBuildMethod.invoke(builder);
+            return built instanceof ItemStack stack ? stack : null;
+        } catch (Throwable t) {
+            return null;
+        }
     }
 
     private ItemStack buildIcon(Material material, Component displayName, List<String> loreLines, String tagId) {
