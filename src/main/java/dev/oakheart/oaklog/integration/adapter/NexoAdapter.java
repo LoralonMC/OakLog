@@ -57,8 +57,11 @@ public class NexoAdapter implements EntryAdapter {
     @Override
     public List<EntryDescriptor> enumerate() {
         try {
-            Set<String> names = NexoItems.itemNames();
-            if (names == null || names.isEmpty()) {
+            // unexcludedItemNames() filters out items with `excludeFromInventory: true`
+            // (GUI icons, HMCCosmetics UI items, collection-log helper icons, etc.)
+            String[] namesArray = NexoItems.unexcludedItemNames();
+            List<String> names = namesArray == null ? List.of() : java.util.Arrays.asList(namesArray);
+            if (names.isEmpty()) {
                 logger.info("Nexo adapter: 0 items reported (Nexo may still be loading — items will appear after NexoItemsLoadedEvent fires)");
                 return List.of();
             }
