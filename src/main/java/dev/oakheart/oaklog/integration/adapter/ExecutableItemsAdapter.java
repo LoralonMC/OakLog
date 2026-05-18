@@ -4,6 +4,7 @@ import dev.oakheart.oaklog.OakLog;
 import dev.oakheart.oaklog.model.Category;
 import dev.oakheart.oaklog.model.EntryDescriptor;
 import dev.oakheart.oaklog.util.EntryKey;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.inventory.ItemStack;
 
 import java.lang.reflect.Method;
@@ -16,7 +17,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Reflection-based ExecutableItems integration.
+ * Reflection-based ExecutableItems integration. Resolves the plugin via
+ * package-prefix scan rather than plugin-name lookup since the EI plugin can
+ * register under several names depending on bundling (ExecutableItems, EI,
+ * etc.) and Paper's plugin classloader isolation hides classes from
+ * Class.forName called with OakLog's classloader.
  */
 public class ExecutableItemsAdapter implements EntryAdapter {
 
@@ -42,13 +47,30 @@ public class ExecutableItemsAdapter implements EntryAdapter {
 
     @Override
     public boolean isAvailable() {
+        Plugin host = findHostPlugin();
+        if (host == null) {
+            logger.fine("ExecutableItems adapter: no plugin with class in com.ssomar.executableitems found");
+            return false;
+        }
         try {
-            // Detect via API class presence — plugin can be named "ExecutableItems",
-            // "executableitems", bundled under SCore, etc. The class is the source of truth.
-            Class<?> apiClass = Class.forName("com.ssomar.score.api.executableitems.ExecutableItemsAPI");
+            ClassLoader hostLoader = host.getClass().getClassLoader();
+            Class<?> apiClass;
+            try {
+                apiClass = Class.forName("com.ssomar.score.api.executableitems.ExecutableItemsAPI",
+                        false, hostLoader);
+            } catch (ClassNotFoundException e) {
+                logger.log(Level.WARNING,
+                        "ExecutableItems found (" + host.getName() + ") but API class "
+                        + "com.ssomar.score.api.executableitems.ExecutableItemsAPI not on its classpath — "
+                        + "version mismatch. Falling back to no enumeration; pickup detection disabled.");
+                return false;
+            }
             Method getManagerMethod = apiClass.getMethod("getExecutableItemsManager");
             manager = getManagerMethod.invoke(null);
-            if (manager == null) return false;
+            if (manager == null) {
+                logger.warning("ExecutableItems: getExecutableItemsManager() returned null");
+                return false;
+            }
 
             idFromItemMethod = findMethod(manager.getClass(),
                     new String[]{"getExecutableItemIdFromItemStack", "getIdFromItemStack"},
@@ -57,11 +79,28 @@ public class ExecutableItemsAdapter implements EntryAdapter {
                     new String[]{"getExecutableItemIdsList", "getExecutableItems", "getAllIds"},
                     new Class<?>[0]);
 
-            return idFromItemMethod != null;
+            if (idFromItemMethod == null) {
+                logger.warning("ExecutableItems: no compatible detect method found on "
+                        + manager.getClass().getName());
+                return false;
+            }
+            logger.info("ExecutableItems adapter resolved via plugin '" + host.getName() + "'");
+            return true;
         } catch (Throwable t) {
-            logger.log(Level.WARNING, "ExecutableItems adapter unavailable: " + t.getClass().getSimpleName() + " " + t.getMessage());
+            logger.log(Level.WARNING, "ExecutableItems adapter unavailable: "
+                    + t.getClass().getSimpleName() + " " + t.getMessage());
             return false;
         }
+    }
+
+    private Plugin findHostPlugin() {
+        for (Plugin p : plugin.getServer().getPluginManager().getPlugins()) {
+            String mainClass = p.getClass().getName();
+            if (mainClass.startsWith("com.ssomar.executableitems")) {
+                return p;
+            }
+        }
+        return null;
     }
 
     private static Method findMethod(Class<?> cls, String[] names, Class<?>[] params) {
