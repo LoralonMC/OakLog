@@ -97,13 +97,10 @@ detection:
     - 'nexo:my_claims_*'
 
     # ===== Duplicates with OakTools (oaktools:* adapter wins) =====
-    # Sickle variants are kept as Nexo entries because OakTools has only one
-    # SICKLE ToolType but Nexo defines six per-material variants (wooden,
-    # stone, iron, golden, diamond, netherite). The OakTools adapter skips
-    # SICKLE so the Nexo sickles render with their proper per-tier textures.
     - 'nexo:file'
     - 'nexo:trowel'
     - 'nexo:wand'
+    - 'nexo:*_sickle'    # OakTools sickle_<tier> entries cover these
 
     # ===== Duplicates with PhoenixCrates (phoenixcrates:* wins) =====
     - 'nexo:*_crate_key'

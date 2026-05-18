@@ -42,6 +42,8 @@ public class OakPetsAdapter implements EntryAdapter {
     private Method getAllPetsMethod;
     private Method petInfoIdMethod;
     private Method petInfoDisplayNameMethod;
+    private Method petInfoUnlockTypeMethod;
+    private Object grantedUnlockType;
     private Constructor<?> voucherCtor;
     private Method voucherBuildMethod;
 
@@ -71,6 +73,15 @@ public class OakPetsAdapter implements EntryAdapter {
             Class<?> petInfoClass = Class.forName("dev.oakheart.oakpets.api.PetInfo", false, cl);
             petInfoIdMethod = petInfoClass.getMethod("id");
             petInfoDisplayNameMethod = petInfoClass.getMethod("displayName");
+            // Permission-type pets don't have voucher items; filter them out.
+            try {
+                petInfoUnlockTypeMethod = petInfoClass.getMethod("unlockType");
+                Class<?> unlockTypeClass = Class.forName("dev.oakheart.oakpets.model.UnlockType",
+                        false, cl);
+                grantedUnlockType = Enum.valueOf((Class<Enum>) unlockTypeClass, "GRANTED");
+            } catch (Throwable ignored) {
+                // older OakPets — fall through and enumerate all pets
+            }
 
             Class<?> builderClass = Class.forName("dev.oakheart.oakpets.api.PetVoucherBuilder", false, cl);
             voucherCtor = builderClass.getConstructor(String.class);
@@ -96,6 +107,10 @@ public class OakPetsAdapter implements EntryAdapter {
             List<EntryDescriptor> out = new ArrayList<>();
             MiniMessage mm = MiniMessage.miniMessage();
             for (Object petInfo : coll) {
+                if (petInfoUnlockTypeMethod != null && grantedUnlockType != null) {
+                    Object unlockType = petInfoUnlockTypeMethod.invoke(petInfo);
+                    if (unlockType != grantedUnlockType) continue; // skip permission pets
+                }
                 String petId = ((String) petInfoIdMethod.invoke(petInfo)).toLowerCase(Locale.ROOT);
                 String rawDisplayName = (String) petInfoDisplayNameMethod.invoke(petInfo);
                 String displayName;
