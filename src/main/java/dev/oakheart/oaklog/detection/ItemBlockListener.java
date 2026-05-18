@@ -16,6 +16,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.MusicInstrumentMeta;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionType;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 
@@ -87,12 +89,35 @@ public class ItemBlockListener implements Listener {
                 return;
             }
         }
+        // Potions / tipped arrows: split by base potion type.
+        if (material == Material.POTION || material == Material.SPLASH_POTION
+                || material == Material.LINGERING_POTION
+                || material == Material.TIPPED_ARROW) {
+            Integer potionEntry = resolvePotionEntry(newItem, material);
+            if (potionEntry != null) {
+                progressManager.markCollected(player, potionEntry);
+                return;
+            }
+        }
 
         // Fall back to vanilla material fast path
         Integer entryId = registry.idForVanillaMaterial(material);
         if (entryId == null) return;
 
         progressManager.markCollected(player, entryId);
+    }
+
+    private Integer resolvePotionEntry(ItemStack stack, Material material) {
+        try {
+            if (!(stack.getItemMeta() instanceof PotionMeta potionMeta)) return null;
+            PotionType type = potionMeta.getBasePotionType();
+            if (type == null) return null;
+            NamespacedKey typeKey = type.getKey();
+            String prefix = material.getKey().getKey();
+            return registry.idFor(typeKey.getNamespace(), prefix + "_" + typeKey.getKey());
+        } catch (Throwable t) {
+            return null;
+        }
     }
 
     private Integer resolveGoatHornEntry(ItemStack stack) {

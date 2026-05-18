@@ -5,14 +5,22 @@ import dev.oakheart.oaklog.integration.adapter.AdapterRegistry;
 import dev.oakheart.oaklog.model.Entry;
 import dev.oakheart.oaklog.model.PlayerProgress;
 import dev.oakheart.oaklog.util.DateFormat;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Material;
+import org.bukkit.MusicInstrument;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.MusicInstrumentMeta;
+import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.potion.PotionType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -66,6 +74,13 @@ public class IconRenderer {
             if (entry.iconModelData() != null && meta != null) {
                 applyCustomModelData(meta, entry.iconModelData());
             }
+            // Apply variant components for synthetic vanilla entries that
+            // share one Material across many sub-variants (Goat Horns,
+            // potions, tipped arrows).
+            if (meta != null) {
+                applyGoatHornVariant(entry, meta);
+                applyPotionVariant(entry, meta);
+            }
         }
         if (meta == null) return stack;
 
@@ -78,6 +93,18 @@ public class IconRenderer {
             String nameKey = collected ? "gui.entry.name-collected" : "gui.entry.name-uncollected";
             Optional<Component> name = messages.parse(nameKey, entryTag, dateTag);
             name.ifPresent(meta::displayName);
+        } else {
+            // Live-icon path: if the source plugin built the item without
+            // setting a display name (some Nexo items omit `itemname:`),
+            // the GUI would fall back to the bare Material name ("Paper").
+            // Use the entry's stored display name as a safety net.
+            Component liveName = meta.displayName();
+            Component liveItemName = null;
+            try { liveItemName = meta.itemName(); } catch (NoSuchMethodError ignored) {}
+            if (liveName == null && liveItemName == null) {
+                meta.displayName(Component.text(entry.displayName())
+                        .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
+            }
         }
 
         // Lore: keep any existing lore (from live icon) and append the OakLog
@@ -128,6 +155,36 @@ public class IconRenderer {
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
         stack.setItemMeta(meta);
         return stack;
+    }
+
+    private static void applyGoatHornVariant(Entry entry, ItemMeta meta) {
+        if (!(meta instanceof MusicInstrumentMeta inst)) return;
+        if (entry.key() == null || !entry.key().startsWith("goat_horn_")) return;
+        String variant = entry.key().substring("goat_horn_".length());
+        try {
+            Registry<MusicInstrument> reg = RegistryAccess.registryAccess()
+                    .getRegistry(RegistryKey.INSTRUMENT);
+            MusicInstrument instrument = reg.get(new NamespacedKey(entry.namespace(),
+                    variant + "_goat_horn"));
+            if (instrument != null) inst.setInstrument(instrument);
+        } catch (Throwable ignored) {}
+    }
+
+    private static void applyPotionVariant(Entry entry, ItemMeta meta) {
+        if (!(meta instanceof PotionMeta potionMeta)) return;
+        String key = entry.key();
+        if (key == null) return;
+        String potionTypeKey = null;
+        if (key.startsWith("potion_")) potionTypeKey = key.substring("potion_".length());
+        else if (key.startsWith("splash_potion_")) potionTypeKey = key.substring("splash_potion_".length());
+        else if (key.startsWith("lingering_potion_")) potionTypeKey = key.substring("lingering_potion_".length());
+        else if (key.startsWith("tipped_arrow_")) potionTypeKey = key.substring("tipped_arrow_".length());
+        if (potionTypeKey == null) return;
+        try {
+            Registry<PotionType> reg = RegistryAccess.registryAccess().getRegistry(RegistryKey.POTION);
+            PotionType type = reg.get(new NamespacedKey(entry.namespace(), potionTypeKey));
+            if (type != null) potionMeta.setBasePotionType(type);
+        } catch (Throwable ignored) {}
     }
 
     @SuppressWarnings("deprecation")

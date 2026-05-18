@@ -18,6 +18,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,6 +66,13 @@ public class VanillaEnumerator {
                 enumerateGoatHornVariants(out);
                 continue;
             }
+            // Potions / tipped arrows: split by PotionType.
+            if (material == Material.POTION || material == Material.SPLASH_POTION
+                    || material == Material.LINGERING_POTION
+                    || material == Material.TIPPED_ARROW) {
+                enumeratePotionVariants(out, material);
+                continue;
+            }
 
             boolean isBlock = material.isBlock();
             Category category = isBlock ? Category.BLOCKS : Category.ITEMS;
@@ -73,6 +81,35 @@ public class VanillaEnumerator {
                     EntryKey.VANILLA,
                     keyName,
                     category,
+                    display,
+                    material.name(),
+                    null,
+                    null
+            ));
+        }
+    }
+
+    private void enumeratePotionVariants(List<EntryDescriptor> out, Material material) {
+        Registry<PotionType> potions = RegistryAccess.registryAccess().getRegistry(RegistryKey.POTION);
+        String prefix = material.getKey().getKey();           // potion / splash_potion / lingering_potion / tipped_arrow
+        String displaySuffix = switch (material) {
+            case POTION -> "Potion";
+            case SPLASH_POTION -> "Splash Potion";
+            case LINGERING_POTION -> "Lingering Potion";
+            case TIPPED_ARROW -> "Tipped Arrow";
+            default -> EntryKey.displayNameFromKey(prefix);
+        };
+        for (PotionType type : potions) {
+            NamespacedKey nk = potions.getKey(type);
+            if (nk == null) continue;
+            String typeKey = nk.getKey();
+            // The "no effect" baseline that vanilla calls "Uncraftable" / "Empty" — skip.
+            if (typeKey.equals("empty") || typeKey.contains("uncraftable")) continue;
+            String display = displaySuffix + " of " + EntryKey.displayNameFromKey(typeKey);
+            out.add(new EntryDescriptor(
+                    EntryKey.VANILLA,
+                    prefix + "_" + typeKey,
+                    Category.ITEMS,
                     display,
                     material.name(),
                     null,
