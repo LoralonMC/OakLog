@@ -88,7 +88,7 @@ public class SetsOverviewGui extends OakLogGui {
             String percent = total == 0 ? "0.0" : String.format("%.1f", 100.0 * collected / total);
 
             TagResolver[] tags = new TagResolver[]{
-                    Placeholder.unparsed("set", def.displayName()),
+                    Placeholder.parsed("set", def.displayName()),
                     Placeholder.unparsed("collected", String.valueOf(collected)),
                     Placeholder.unparsed("total", String.valueOf(total)),
                     Placeholder.unparsed("percent", percent)

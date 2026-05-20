@@ -39,7 +39,7 @@ public class SetGui extends OakLogGui {
         String title = def != null ? def.displayName() : setId;
 
         inventory = Bukkit.createInventory(this, 54, plugin.getMessageManager()
-                .parse("gui.set.title", Placeholder.unparsed("set", title))
+                .parse("gui.set.title", Placeholder.parsed("set", title))
                 .orElse(net.kyori.adventure.text.Component.text(title)));
 
         renderEntries();

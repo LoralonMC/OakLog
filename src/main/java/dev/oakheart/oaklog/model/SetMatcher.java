@@ -17,7 +17,11 @@ public sealed interface SetMatcher {
         public boolean matches(Entry entry) {
             if (entry.category() != Category.BLOCKS && entry.category() != Category.ITEMS) return false;
             if (!"minecraft".equals(entry.namespace())) return false;
-            return materials.contains(entry.key());
+            String key = entry.key();
+            for (String pattern : materials) {
+                if (globMatches(pattern, key)) return true;
+            }
+            return false;
         }
     }
 
