@@ -17,6 +17,9 @@ dependencies:
     ExecutableItems:
       load: BEFORE
       required: false
+    HMCWraps:
+      load: BEFORE
+      required: false
     packetevents:
       load: BEFORE
       required: false

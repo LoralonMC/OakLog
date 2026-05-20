@@ -22,6 +22,7 @@ import dev.oakheart.oaklog.enumeration.SetComputer;
 import dev.oakheart.oaklog.enumeration.VanillaEnumerator;
 import dev.oakheart.oaklog.integration.adapter.AdapterRegistry;
 import dev.oakheart.oaklog.integration.adapter.ExecutableItemsAdapter;
+import dev.oakheart.oaklog.integration.adapter.HMCWrapsAdapter;
 import dev.oakheart.oaklog.integration.adapter.NexoAdapter;
 import dev.oakheart.oaklog.integration.adapter.OakPetsAdapter;
 import dev.oakheart.oaklog.integration.adapter.OakTagsAdapter;
@@ -143,6 +144,7 @@ public final class OakLog extends JavaPlugin {
         adapterRegistry.register(new PhoenixCratesAdapter(this));   // signature, specific
         adapterRegistry.register(new NekoTrapsAdapter(this));       // reflection, specific
         adapterRegistry.register(new ShopkeepersAdapter(this));     // reflection, specific
+        adapterRegistry.register(new HMCWrapsAdapter(this));        // reflection, specific (stamps PDC over Nexo skins)
         adapterRegistry.register(new NexoAdapter(this));            // broader (any Nexo-textured item)
         adapterRegistry.register(new PdcAdapter(this));             // generic patterns (fallback)
 

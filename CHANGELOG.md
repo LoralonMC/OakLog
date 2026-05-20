@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- HMCWraps integration: every wrap defined in `plugins/HMCWraps/wraps/*.yml` becomes one entry in the Items category, collected when the physical wrap token enters the player's inventory. Detection uses HMCWraps' `Wrapper.getPhysicalWrapper` API so already-applied wraps don't count — only the consumable wrap token does. Registered between Shopkeepers and Nexo in the adapter chain to claim wraps whose visuals come from Nexo skin items.
 - Initial project skeleton (gradle build, paper-plugin.yml, config.yml, messages.yml)
 - Main class lifecycle with ConfigManager, MessageManager, and DebugLogger wired through OakheartLib
 - SQLite storage layer with WAL mode, prepared-statement cache, single-thread async executor, and schema version tracking
