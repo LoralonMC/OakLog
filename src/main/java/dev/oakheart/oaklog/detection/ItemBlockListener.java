@@ -61,10 +61,20 @@ public class ItemBlockListener implements Listener {
         }
 
         // Walk the adapter chain. Each adapter that returns a key is checked
-        // against the registry; the first key with a real entry wins. If an
-        // adapter returns a key for an excluded entry (e.g. oaktools:sickle
-        // skipped because Nexo handles the variants), we keep walking instead
-        // of giving up.
+        // against the registry; the first key with a real entry wins.
+        //
+        // If an adapter returns a key for an excluded entry (e.g.
+        // oaktools:sickle skipped because Nexo handles the variants), we keep
+        // walking the chain so a later adapter can still claim the item.
+        //
+        // BUT: if any adapter recognized the item at all (returned a non-null
+        // key), we do NOT fall back to vanilla material / goat-horn / potion
+        // detection. Adapter recognition is an identity claim — a Nexo
+        // "Forest Elytra" is not a vanilla elytra just because no other
+        // adapter picked it up. Excluding a custom item means "don't track
+        // this", not "log it as the underlying material instead".
+        boolean adapterRecognized = false;
+        String lastExcludedKey = null;
         for (EntryAdapter adapter : adapterRegistry.adapters()) {
             String key;
             try {
@@ -73,12 +83,23 @@ public class ItemBlockListener implements Listener {
                 continue;
             }
             if (key == null) continue;
+            adapterRecognized = true;
             Integer entryId = registry.idFor(key);
             if (entryId != null) {
                 progressManager.markCollected(player, entryId);
                 return;
             }
+            lastExcludedKey = key;
         }
+        if (adapterRecognized) {
+            if (plugin.getConfigManager().isDebug()) {
+                plugin.debug("Item recognized by an adapter as '" + lastExcludedKey
+                        + "' but the entry is excluded — logging nothing (no vanilla fallback).");
+            }
+            return;
+        }
+
+        // No adapter claimed this item — proceed with vanilla detection paths.
 
         // Goat Horn variants: same Material, different instruments.
         Material material = newItem.getType();

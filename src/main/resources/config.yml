@@ -60,59 +60,36 @@ detection:
     - 'uncraftable_tipped_arrow'
 
   # Exclude specific entries by their full namespacedKey ('namespace:key').
-  # Useful for hiding texture-only / UI / template items from custom-item
-  # plugins (Nexo in particular publishes a lot of items that exist only
-  # to be wrapped by other plugins). Supports '*' globs.
+  # Supports '*' globs.
+  #
+  # When an adapter recognizes an item but its entry is excluded here, OakLog
+  # treats that as "do not track this item" — it will NOT fall back to logging
+  # the underlying vanilla material. Use this for custom items you don't want
+  # cluttering the log (GUI icons, internal templates, wrap visual references).
+  #
+  # The defaults below only cover vanilla unobtainable entities. Add your own
+  # patterns below to exclude custom items from any installed plugin (Nexo,
+  # ItemsAdder, ExecutableItems, etc.).
+  #
+  # Common patterns (examples — uncomment what applies to your server):
+  #
+  #   # HMCCosmetics UI items (only if you use HMCCosmetics):
+  #   # - 'nexo:hmc_*'
+  #
+  #   # Nexo-shipped example items you don't use as collectibles:
+  #   # - 'nexo:forest_helmet'
+  #   # - 'nexo:forest_chestplate'
+  #   # - 'nexo:arm_chair'
+  #
+  #   # Adapter redirects — if two adapters can both detect the same item,
+  #   # exclude one so the other wins. E.g. excluding 'nexo:wooden_sickle'
+  #   # lets the OakTools adapter's 'oaktools:sickle_wood' entry claim it.
+  #
   excluded-entries:
     # ===== Entities not accessible to players in survival =====
     - 'minecraft:entity_giant'         # legacy unused mob; /summon only
     - 'minecraft:entity_illusioner'    # /summon only
     - 'minecraft:entity_mannequin'     # testing entity
-
-    # ===== HMCCosmetics UI items =====
-    - 'nexo:hmc_*'
-    - 'nexo:arrow_next'
-    - 'nexo:arrow_back'
-    - 'nexo:colorful'
-    - 'nexo:paintbrush'
-
-    # ===== Nogs Menagerie collection-log GUI icons =====
-    - 'nexo:nm_icon_*'
-
-    # ===== Texture-only templates (used by other plugins as model refs) =====
-    # Rank-pet head templates referenced by OakPets vouchers
-    - 'nexo:md_*_head'
-    - 'nexo:md_santa_hat'
-    - 'nexo:butterfly_head'
-    - 'nexo:hummingbird_head'
-    - 'nexo:firefly_head'
-    # Nogs Menagerie companion heads referenced by OakPets vouchers
-    - 'nexo:nm_head_*'
-    # HMCCosmetics flower crown / wing references
-    - 'nexo:*_flower_crown'
-    - 'nexo:*_petal_crown'
-    - 'nexo:lily_crown'
-    - 'nexo:*_petal_wings'
-    - 'nexo:*_velvet_wings'
-    - 'nexo:*_ethereal_wings'
-
-    # ===== Spectra/Lands menu items =====
-    - 'nexo:claim_*'
-    - 'nexo:claims_*'
-    - 'nexo:my_claims_*'
-
-    # ===== Duplicates with OakTools (oaktools:* adapter wins) =====
-    - 'nexo:file'
-    - 'nexo:trowel'
-    - 'nexo:wand'
-    - 'nexo:*_sickle'    # OakTools sickle_<tier> entries cover these
-
-    # ===== Duplicates with PhoenixCrates (phoenixcrates:* wins) =====
-    - 'nexo:*_crate_key'
-
-    # ===== Duplicates with ExecutableItems (executableitems:* wins) =====
-    - 'nexo:vote_token'
-    - 'nexo:hardened_*_ingot'
 
 # ============================================================
 # STORAGE

@@ -8,7 +8,9 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.entity.Axolotl;
 import org.bukkit.entity.Cat;
+import org.bukkit.entity.Chicken;
 import org.bukkit.entity.Cow;
+import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fox;
@@ -19,7 +21,9 @@ import org.bukkit.entity.MushroomCow;
 import org.bukkit.entity.Painting;
 import org.bukkit.entity.Panda;
 import org.bukkit.entity.Parrot;
+import org.bukkit.entity.Pig;
 import org.bukkit.entity.Rabbit;
+import org.bukkit.entity.Salmon;
 import org.bukkit.entity.Sheep;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.ZombieNautilus;
@@ -58,6 +62,10 @@ public final class VariantResolvers {
         resolvers.put(EntityType.PAINTING, new PaintingVariant());
         resolvers.put(EntityType.VILLAGER, new VillagerVariant());
         resolvers.put(EntityType.ZOMBIE_NAUTILUS, new ZombieNautilusVariant());
+        resolvers.put(EntityType.PIG, new PigVariant());
+        resolvers.put(EntityType.CHICKEN, new ChickenVariant());
+        resolvers.put(EntityType.SALMON, new SalmonVariant());
+        resolvers.put(EntityType.CREEPER, new CreeperVariant());
     }
 
     public VariantResolver get(EntityType type) {
@@ -348,6 +356,84 @@ public final class VariantResolvers {
                     .getRegistry(RegistryKey.ZOMBIE_NAUTILUS_VARIANT);
             NamespacedKey nk = reg.getKey(z.getVariant());
             return nk == null ? null : nk.getKey();
+        }
+    }
+
+    private static final class PigVariant implements VariantResolver {
+        @Override
+        public List<String> variantKeys() {
+            Registry<Pig.Variant> reg = RegistryAccess.registryAccess().getRegistry(RegistryKey.PIG_VARIANT);
+            List<String> out = new ArrayList<>();
+            for (Pig.Variant v : reg) {
+                NamespacedKey nk = reg.getKey(v);
+                if (nk != null) out.add(nk.getKey());
+            }
+            return out;
+        }
+
+        @Override
+        public String resolve(Entity entity) {
+            if (!(entity instanceof Pig pig)) return null;
+            Registry<Pig.Variant> reg = RegistryAccess.registryAccess().getRegistry(RegistryKey.PIG_VARIANT);
+            NamespacedKey nk = reg.getKey(pig.getVariant());
+            return nk == null ? null : nk.getKey();
+        }
+    }
+
+    private static final class ChickenVariant implements VariantResolver {
+        @Override
+        public List<String> variantKeys() {
+            Registry<Chicken.Variant> reg = RegistryAccess.registryAccess().getRegistry(RegistryKey.CHICKEN_VARIANT);
+            List<String> out = new ArrayList<>();
+            for (Chicken.Variant v : reg) {
+                NamespacedKey nk = reg.getKey(v);
+                if (nk != null) out.add(nk.getKey());
+            }
+            return out;
+        }
+
+        @Override
+        public String resolve(Entity entity) {
+            if (!(entity instanceof Chicken chicken)) return null;
+            Registry<Chicken.Variant> reg = RegistryAccess.registryAccess().getRegistry(RegistryKey.CHICKEN_VARIANT);
+            NamespacedKey nk = reg.getKey(chicken.getVariant());
+            return nk == null ? null : nk.getKey();
+        }
+    }
+
+    private static final class SalmonVariant implements VariantResolver {
+        @Override
+        public List<String> variantKeys() {
+            List<String> out = new ArrayList<>();
+            for (Salmon.Variant v : Salmon.Variant.values()) {
+                out.add(v.name().toLowerCase(Locale.ROOT));
+            }
+            return out;
+        }
+
+        @Override
+        public String resolve(Entity entity) {
+            if (!(entity instanceof Salmon salmon)) return null;
+            Salmon.Variant v = salmon.getVariant();
+            return v == null ? null : v.name().toLowerCase(Locale.ROOT);
+        }
+    }
+
+    private static final class CreeperVariant implements VariantResolver {
+        @Override
+        public List<String> variantKeys() {
+            return List.of("powered");
+        }
+
+        @Override
+        public String resolve(Entity entity) {
+            if (!(entity instanceof Creeper creeper)) return null;
+            return creeper.isPowered() ? "powered" : null;
+        }
+
+        @Override
+        public boolean hasBaseEntry() {
+            return true;
         }
     }
 

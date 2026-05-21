@@ -95,7 +95,27 @@ public class CategoryGui extends OakLogGui {
         }
 
         if (slot == BTN_SEARCH) {
-            viewer.sendMessage(net.kyori.adventure.text.Component.text("Search coming soon!"));
+            Category currentCategory = category;
+            int currentPage = page;
+            Filter currentFilter = filter;
+            viewer.closeInventory();
+            plugin.getSearchInput().prompt(viewer,
+                    query -> {
+                        if (query == null || query.isBlank()) {
+                            CategoryGui restored = new CategoryGui(plugin, viewer, targetUuid,
+                                    iconRenderer, currentCategory, currentPage);
+                            restored.filter = currentFilter;
+                            restored.open();
+                            return;
+                        }
+                        new SearchResultsGui(plugin, viewer, targetUuid, iconRenderer, query.trim()).open();
+                    },
+                    () -> {
+                        CategoryGui restored = new CategoryGui(plugin, viewer, targetUuid,
+                                iconRenderer, currentCategory, currentPage);
+                        restored.filter = currentFilter;
+                        restored.open();
+                    });
             return;
         }
 

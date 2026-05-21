@@ -6,6 +6,7 @@ import dev.oakheart.oaklog.util.EntryKey;
 import dev.oakheart.oaklog.variants.VariantResolver;
 import dev.oakheart.oaklog.variants.VariantResolvers;
 import org.bukkit.Material;
+import org.bukkit.entity.Ageable;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -58,6 +59,10 @@ public class EntityListener implements Listener {
             if (variant != null) {
                 key = key + "_" + variant;
             }
+        }
+
+        if (entity instanceof Ageable ageable && !ageable.isAdult()) {
+            key = key + "_baby";
         }
 
         Integer entryId = registry.idFor(EntryKey.VANILLA, key);

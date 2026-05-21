@@ -54,6 +54,10 @@ public class ChatSearchInput implements SearchInput {
 
             event.setCancelled(true);
             String text = PlainTextComponentSerializer.plainText().serialize(event.message()).trim();
+            if (text.equalsIgnoreCase("cancel")) {
+                cancel("typed-cancel");
+                return;
+            }
             finish(text);
         }
 

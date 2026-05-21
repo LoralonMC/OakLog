@@ -7,7 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Typing `cancel` at the search prompt now cancels the search instead of searching for the literal string "cancel" — matching the behaviour the prompt message already advertised. Case-insensitive.
+
+- The search button in the per-category GUI now actually opens the search prompt (previously it printed a "Search coming soon!" placeholder). Cancelling or submitting an empty query returns to the same category/page/filter the player was viewing, rather than bouncing back to the hub.
+
+- Custom items recognized by an adapter (Nexo, ExecutableItems, HMCWraps, etc.) whose entry is excluded via `detection.excluded-entries` no longer fall through to the vanilla material entry. Previously, picking up a custom Nexo elytra whose entry was excluded would silently log the vanilla `minecraft:elytra` entry instead. Adapter recognition is now treated as an identity claim — excluding a custom item means "don't track this item", not "log it as the underlying material instead". Adapter-to-adapter redirect chains (e.g. `oaktools:sickle` excluded → `nexo:wooden_sickle` claims it) still work as before.
+
+### Changed
+
+- Default `config.yml` no longer ships with Oakheart-server-specific entry exclusions (`nm_*`, `md_*_head`, `*_petal_wings`, Spectra/Lands menu items, OakTools/PhoenixCrates/ExecutableItems duplicate redirects, etc.). The default now contains only universally-applicable vanilla-unobtainable-mob exclusions, plus commented examples showing common patterns admins can adapt. Existing installations are unaffected — their live `config.yml` retains any prior exclusions.
+
 ### Added
+
+- Debug logging in `ItemBlockListener` for the "adapter recognized but excluded" path — with `debug: true`, the console now prints which adapter recognized the item and which excluded key blocked it, making mis-configured exclusions easy to diagnose.
+
+- New entity variant resolvers for Paper 26.1's variant-bearing mobs:
+  - **Pig**: cold / warm / temperate (via `RegistryKey.PIG_VARIANT`)
+  - **Chicken**: cold / warm / temperate (via `RegistryKey.CHICKEN_VARIANT`)
+  - **Salmon**: small / medium / large (via `Salmon.Variant` enum)
+  - **Creeper**: powered (charged) creepers are now a separate entry from normal creepers, using a new `hasBaseEntry()` resolver flag that preserves the existing `entity_creeper` entry alongside `entity_creeper_powered`
+- Baby variants now count as separate entries for every Ageable mob — sheep colors, cow climate variants, villager type×profession, horse color×style, zombie/piglin/villager, and every other naturally breedable or natural-spawn-baby mob each get a paired `_baby` entry (display name prefixed with "Baby "). Detected via `Ageable#isAdult()` at kill / name-tag time.
+
+### Changed
+
+- The `Pig`, `Chicken`, and `Salmon` entries are now split by variant. Existing player progress on the old `entity_pig`, `entity_chicken`, and `entity_salmon` keys is retired (preserved in the database but hidden from totals). The variants populate as players encounter them.
 
 - HMCWraps integration: every wrap defined in `plugins/HMCWraps/wraps/*.yml` becomes one entry in the Items category, collected when the physical wrap token enters the player's inventory. Detection uses HMCWraps' `Wrapper.getPhysicalWrapper` API so already-applied wraps don't count — only the consumable wrap token does. Registered between Shopkeepers and Nexo in the adapter chain to claim wraps whose visuals come from Nexo skin items.
 - Initial project skeleton (gradle build, paper-plugin.yml, config.yml, messages.yml)

@@ -45,4 +45,18 @@ public interface VariantResolver {
     default String iconMaterial(String variantKey) {
         return null;
     }
+
+    /**
+     * Whether the enumerator should also emit a base {@code entity_<type>} entry
+     * alongside the variant entries. Default {@code false}: most variant-bearing
+     * mobs always have a variant (sheep is always coloured), so emitting a
+     * variantless base entry would create an unreachable entry.
+     * <p>
+     * Override to {@code true} when {@link #resolve(Entity)} can legitimately
+     * return {@code null} for some instances (e.g. a normal Creeper, where
+     * "powered" is the variant and absence of powered is the base form).
+     */
+    default boolean hasBaseEntry() {
+        return false;
+    }
 }

@@ -14,6 +14,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.block.Biome;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Ageable;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.generator.structure.Structure;
@@ -21,10 +22,24 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public class VanillaEnumerator {
+
+    /**
+     * Ageable entity types whose baby form isn't naturally reachable in vanilla —
+     * either because the "baby" stage is a separate EntityType (Frog/Tadpole) or
+     * because no baby variant spawns at all (Wandering Trader, Trader Llama).
+     */
+    private static final Set<EntityType> NO_BABY_ENTRY = EnumSet.of(
+            EntityType.FROG,
+            EntityType.TADPOLE,
+            EntityType.WANDERING_TRADER,
+            EntityType.TRADER_LLAMA
+    );
 
     private final ConfigManager configManager;
     private final VariantResolvers variantResolvers;
@@ -148,35 +163,47 @@ public class VanillaEnumerator {
             String keyName = type.getKey().getKey();
             String baseDisplay = EntryKey.displayNameFromKey(keyName);
             String baseIcon = pickEntityIcon(type);
+            boolean withBabies = hasBabyEntry(type);
 
             VariantResolver resolver = variantResolvers.get(type);
             if (resolver == null) {
-                out.add(new EntryDescriptor(
-                        EntryKey.VANILLA,
-                        "entity_" + keyName,
-                        Category.ENTITIES,
-                        baseDisplay,
-                        baseIcon,
-                        null,
-                        null
-                ));
+                emitEntityEntries(out, "entity_" + keyName, baseDisplay, baseIcon, withBabies);
                 continue;
+            }
+
+            if (resolver.hasBaseEntry()) {
+                emitEntityEntries(out, "entity_" + keyName, baseDisplay, baseIcon, withBabies);
             }
 
             for (String variantKey : resolver.variantKeys()) {
                 String suffix = resolver.displayName(variantKey);
                 String iconOverride = resolver.iconMaterial(variantKey);
-                out.add(new EntryDescriptor(
-                        EntryKey.VANILLA,
-                        "entity_" + keyName + "_" + variantKey,
-                        Category.ENTITIES,
-                        suffix + " " + baseDisplay,
-                        iconOverride != null ? iconOverride : baseIcon,
-                        null,
-                        null
-                ));
+                String key = "entity_" + keyName + "_" + variantKey;
+                String display = suffix + " " + baseDisplay;
+                String icon = iconOverride != null ? iconOverride : baseIcon;
+                emitEntityEntries(out, key, display, icon, withBabies);
             }
         }
+    }
+
+    /**
+     * Emits the adult entry — and, if the entity is Ageable with a reachable baby
+     * form, the paired {@code _baby} entry with a "Baby " display prefix.
+     */
+    private static void emitEntityEntries(List<EntryDescriptor> out, String key,
+                                          String display, String icon, boolean withBabies) {
+        out.add(new EntryDescriptor(EntryKey.VANILLA, key, Category.ENTITIES,
+                display, icon, null, null));
+        if (withBabies) {
+            out.add(new EntryDescriptor(EntryKey.VANILLA, key + "_baby", Category.ENTITIES,
+                    "Baby " + display, icon, null, null));
+        }
+    }
+
+    private static boolean hasBabyEntry(EntityType type) {
+        if (NO_BABY_ENTRY.contains(type)) return false;
+        Class<?> cls = type.getEntityClass();
+        return cls != null && Ageable.class.isAssignableFrom(cls);
     }
 
     private void enumerateBiomes(List<EntryDescriptor> out) {
