@@ -123,7 +123,7 @@ public class OakTagsAdapter implements EntryAdapter {
                 tagInfoUnlockTypeMethod = tagInfoClass.getMethod("unlockType");
                 Class<?> unlockTypeClass = Class.forName("dev.oakheart.oaktags.model.UnlockType",
                         false, host.getClass().getClassLoader());
-                grantedEnum = Enum.valueOf((Class<Enum>) unlockTypeClass, "GRANTED");
+                grantedEnum = unlockTypeClass.getField("GRANTED").get(null);
             } catch (Throwable ignored) {
                 // older OakTags without UnlockType — fall through and enumerate everything
             }

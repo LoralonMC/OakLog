@@ -78,7 +78,7 @@ public class OakPetsAdapter implements EntryAdapter {
                 petInfoUnlockTypeMethod = petInfoClass.getMethod("unlockType");
                 Class<?> unlockTypeClass = Class.forName("dev.oakheart.oakpets.model.UnlockType",
                         false, cl);
-                grantedUnlockType = Enum.valueOf((Class<Enum>) unlockTypeClass, "GRANTED");
+                grantedUnlockType = unlockTypeClass.getField("GRANTED").get(null);
             } catch (Throwable ignored) {
                 // older OakPets — fall through and enumerate all pets
             }

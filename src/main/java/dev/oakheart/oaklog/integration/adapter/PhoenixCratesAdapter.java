@@ -169,7 +169,10 @@ public class PhoenixCratesAdapter implements EntryAdapter {
         try {
             ItemMeta meta = stack.getItemMeta();
             if (meta != null) {
-                if (meta.hasCustomModelData()) cmd = meta.getCustomModelData();
+                if (meta.hasCustomModelDataComponent()) {
+                    var floats = meta.getCustomModelDataComponent().getFloats();
+                    if (!floats.isEmpty()) cmd = floats.get(0).intValue();
+                }
                 net.kyori.adventure.text.Component nameComp = meta.displayName();
                 if (nameComp == null) {
                     try { nameComp = meta.itemName(); }

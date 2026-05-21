@@ -143,8 +143,11 @@ public class PdcAdapter implements EntryAdapter {
         Integer cmd = null;
         try {
             ItemMeta meta = stack.getItemMeta();
-            if (meta != null && meta.hasCustomModelData()) {
-                cmd = meta.getCustomModelData();
+            if (meta != null && meta.hasCustomModelDataComponent()) {
+                var floats = meta.getCustomModelDataComponent().getFloats();
+                if (!floats.isEmpty()) {
+                    cmd = floats.get(0).intValue();
+                }
             }
         } catch (Throwable ignored) {}
 
