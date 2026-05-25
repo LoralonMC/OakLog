@@ -8,10 +8,14 @@ import dev.oakheart.oaklog.variants.VariantResolver;
 import dev.oakheart.oaklog.variants.VariantResolvers;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.MusicInstrument;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
+import io.papermc.paper.advancement.AdvancementDisplay;
+import org.bukkit.advancement.Advancement;
 import org.bukkit.block.Biome;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Ageable;
@@ -23,6 +27,7 @@ import org.bukkit.potion.PotionType;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -59,8 +64,74 @@ public class VanillaEnumerator {
         enumerateStructures(all);
         enumerateEffects(all);
         enumerateEnchantments(all);
+        enumerateAdvancements(all);
 
         return all;
+    }
+
+    private void enumerateAdvancements(List<EntryDescriptor> out) {
+        Iterator<Advancement> it = Bukkit.advancementIterator();
+        while (it.hasNext()) {
+            Advancement adv;
+            try {
+                adv = it.next();
+            } catch (Throwable t) {
+                continue;
+            }
+            NamespacedKey nk = adv.getKey();
+            String path = nk.getKey();
+            if (path.startsWith("recipes/")) continue;
+            if (path.endsWith("/root")) continue;
+
+            AdvancementDisplay display;
+            try {
+                display = adv.getDisplay();
+            } catch (Throwable t) {
+                continue;
+            }
+            if (display == null) continue;
+
+            String displayName = resolveAdvancementTitle(display, path);
+            String iconMaterial = display.icon() != null && display.icon().getType() != Material.AIR
+                    ? display.icon().getType().name()
+                    : "WRITTEN_BOOK";
+            Integer iconModelData = extractCustomModelData(display.icon());
+
+            out.add(new EntryDescriptor(
+                    nk.getNamespace(),
+                    "advancement_" + path,
+                    Category.ADVANCEMENTS,
+                    displayName,
+                    iconMaterial,
+                    iconModelData,
+                    null
+            ));
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static Integer extractCustomModelData(org.bukkit.inventory.ItemStack stack) {
+        if (stack == null || !stack.hasItemMeta()) return null;
+        try {
+            org.bukkit.inventory.meta.ItemMeta meta = stack.getItemMeta();
+            return meta.hasCustomModelData() ? meta.getCustomModelData() : null;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private static String resolveAdvancementTitle(AdvancementDisplay display, String pathFallback) {
+        try {
+            String plain = PlainTextComponentSerializer.plainText().serialize(display.title());
+            if (plain != null && !plain.isBlank()
+                    && !plain.startsWith("advancement.")
+                    && !plain.startsWith("advancements.")) {
+                return plain;
+            }
+        } catch (Throwable ignored) {}
+        int lastSlash = pathFallback.lastIndexOf('/');
+        String last = lastSlash >= 0 ? pathFallback.substring(lastSlash + 1) : pathFallback;
+        return EntryKey.displayNameFromKey(last);
     }
 
     private void enumerateMaterials(List<EntryDescriptor> out, List<String> excludedPatterns) {

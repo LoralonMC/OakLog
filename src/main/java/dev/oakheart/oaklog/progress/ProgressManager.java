@@ -106,6 +106,22 @@ public class ProgressManager implements Listener {
         return true;
     }
 
+    /**
+     * Mark an entry collected without firing a ProgressEvent. Used for
+     * backfill paths (e.g. silently catching up a player's already-completed
+     * advancements on first join after the advancements category was added).
+     * Returns false when the player isn't currently loaded — callers should
+     * tolerate that (the player will simply be re-checked on next join).
+     */
+    public boolean markCollectedSilent(UUID uuid, int entryId) {
+        PlayerProgress progress = online.get(uuid);
+        if (progress == null) return false;
+        long now = System.currentTimeMillis();
+        if (!progress.markCollected(entryId, now)) return false;
+        dirty.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>()).put(entryId, now);
+        return true;
+    }
+
     public void grant(UUID uuid, int entryId) {
         long now = System.currentTimeMillis();
         PlayerProgress progress = online.get(uuid);

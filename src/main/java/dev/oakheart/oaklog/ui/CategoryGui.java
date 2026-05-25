@@ -27,9 +27,9 @@ public class CategoryGui extends OakLogGui {
             3, Category.BIOMES,
             4, Category.STRUCTURES,
             5, Category.EFFECTS,
-            6, Category.ENCHANTMENTS
+            6, Category.ENCHANTMENTS,
+            7, Category.ADVANCEMENTS
     );
-    private static final int BTN_SEARCH = 7;
     private static final int BTN_BACK = 8;
     private static final EnumMap<Category, Material> CATEGORY_ICONS = new EnumMap<>(Category.class);
 
@@ -41,8 +41,10 @@ public class CategoryGui extends OakLogGui {
         CATEGORY_ICONS.put(Category.STRUCTURES, Material.STONE_BRICKS);
         CATEGORY_ICONS.put(Category.EFFECTS, Material.POTION);
         CATEGORY_ICONS.put(Category.ENCHANTMENTS, Material.ENCHANTED_BOOK);
+        CATEGORY_ICONS.put(Category.ADVANCEMENTS, Material.KNOWLEDGE_BOOK);
     }
 
+    private static final int BTN_SEARCH = 46;
     private static final int FILTER_ALL = 47;
     private static final int FILTER_COLLECTED = 49;
     private static final int FILTER_UNCOLLECTED = 51;

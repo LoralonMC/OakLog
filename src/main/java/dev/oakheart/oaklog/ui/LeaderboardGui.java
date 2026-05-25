@@ -26,7 +26,7 @@ public class LeaderboardGui extends OakLogGui {
     private static final Map<Integer, Category> TAB_CATEGORY = new java.util.HashMap<>();
     private static final EnumMap<Category, Material> CATEGORY_ICONS = new EnumMap<>(Category.class);
     private static final int TAB_TOTAL = 0;
-    private static final int BTN_BACK = 8;
+    private static final int BTN_BACK = 53;
     private static final int YOU_SLOT = 49;
 
     static {
@@ -37,6 +37,7 @@ public class LeaderboardGui extends OakLogGui {
         TAB_CATEGORY.put(5, Category.STRUCTURES);
         TAB_CATEGORY.put(6, Category.EFFECTS);
         TAB_CATEGORY.put(7, Category.ENCHANTMENTS);
+        TAB_CATEGORY.put(8, Category.ADVANCEMENTS);
 
         CATEGORY_ICONS.put(Category.BLOCKS, Material.GRASS_BLOCK);
         CATEGORY_ICONS.put(Category.ITEMS, Material.APPLE);
@@ -45,6 +46,7 @@ public class LeaderboardGui extends OakLogGui {
         CATEGORY_ICONS.put(Category.STRUCTURES, Material.STONE_BRICKS);
         CATEGORY_ICONS.put(Category.EFFECTS, Material.POTION);
         CATEGORY_ICONS.put(Category.ENCHANTMENTS, Material.ENCHANTED_BOOK);
+        CATEGORY_ICONS.put(Category.ADVANCEMENTS, Material.KNOWLEDGE_BOOK);
     }
 
     private final IconRenderer iconRenderer;

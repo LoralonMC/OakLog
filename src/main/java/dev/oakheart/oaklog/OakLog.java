@@ -11,6 +11,7 @@ import dev.oakheart.oaklog.ui.search.ChatSearchInput;
 import dev.oakheart.oaklog.ui.search.SearchInput;
 import dev.oakheart.oaklog.commands.OakLogCommand;
 import dev.oakheart.oaklog.config.SetsConfig;
+import dev.oakheart.oaklog.detection.AdvancementListener;
 import dev.oakheart.oaklog.detection.BiomeListener;
 import dev.oakheart.oaklog.detection.EffectListener;
 import dev.oakheart.oaklog.detection.EnchantmentListener;
@@ -183,6 +184,8 @@ public final class OakLog extends JavaPlugin {
                 new EnchantmentListener(entryRegistry, progressManager), this);
         getServer().getPluginManager().registerEvents(
                 new StructureListener(configManager, entryRegistry, progressManager), this);
+        getServer().getPluginManager().registerEvents(
+                new AdvancementListener(this, entryRegistry, progressManager), this);
         getServer().getPluginManager().registerEvents(new GuiListener(), this);
         getServer().getPluginManager().registerEvents(toastService, this);
 

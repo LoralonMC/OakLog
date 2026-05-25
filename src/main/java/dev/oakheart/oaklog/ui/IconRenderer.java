@@ -111,7 +111,8 @@ public class IconRenderer {
                 meta.displayName(name.get());
             } else if (entry.category() == Category.BIOMES
                     || entry.category() == Category.STRUCTURES
-                    || entry.category() == Category.ENTITIES) {
+                    || entry.category() == Category.ENTITIES
+                    || entry.category() == Category.ADVANCEMENTS) {
                 meta.displayName(Component.text(entry.displayName())
                         .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
             } else if (entry.category() == Category.EFFECTS

@@ -9,7 +9,8 @@ public enum Category {
     BIOMES,
     STRUCTURES,
     EFFECTS,
-    ENCHANTMENTS;
+    ENCHANTMENTS,
+    ADVANCEMENTS;
 
     public String id() {
         return name().toLowerCase(Locale.ROOT);
