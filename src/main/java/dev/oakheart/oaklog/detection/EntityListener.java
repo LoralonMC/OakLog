@@ -5,16 +5,22 @@ import dev.oakheart.oaklog.registry.EntryRegistry;
 import dev.oakheart.oaklog.util.EntryKey;
 import dev.oakheart.oaklog.variants.VariantResolver;
 import dev.oakheart.oaklog.variants.VariantResolvers;
+import io.papermc.paper.event.player.PlayerTradeEvent;
 import org.bukkit.Material;
+import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.Ageable;
+import org.bukkit.entity.Boat;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Minecart;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Tameable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityTameEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -44,9 +50,50 @@ public class EntityListener implements Listener {
     public void onInteractEntity(PlayerInteractEntityEvent event) {
         if (event.getHand() != EquipmentSlot.HAND) return;
         Player player = event.getPlayer();
+        Entity target = event.getRightClicked();
+
+        // Boats and minecarts are collected by right-clicking (the natural
+        // "interact" gesture — opening / mounting). No held item required.
+        if (target instanceof Boat || target instanceof Minecart) {
+            markEntityCollected(player, target);
+            return;
+        }
+
         ItemStack hand = player.getInventory().getItemInMainHand();
         if (hand.getType() != Material.NAME_TAG) return;
-        markEntityCollected(player, event.getRightClicked());
+        // A blank name tag doesn't actually rename anything in vanilla — the
+        // interact is a no-op. Require a customised tag so this matches the
+        // in-game semantics of "naming the mob counts as collecting it".
+        if (!hand.hasItemMeta() || hand.getItemMeta().displayName() == null) return;
+        markEntityCollected(player, target);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onTame(EntityTameEvent event) {
+        if (!(event.getOwner() instanceof Player player)) return;
+        markEntityCollected(player, event.getEntity());
+    }
+
+    // AbstractHorse taming (horse, donkey, mule, llama, trader llama, camel)
+    // historically doesn't fire EntityTameEvent on every Paper version — it's
+    // gated on the riding-success path inside NMS. Catch it via the post-tame
+    // state on the next interact tick: if the player right-clicks a horse
+    // they already own, that's a definitive "I tamed this" signal.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onInteractHorse(PlayerInteractEntityEvent event) {
+        if (event.getHand() != EquipmentSlot.HAND) return;
+        Entity target = event.getRightClicked();
+        if (!(target instanceof AbstractHorse horse)) return;
+        if (!(target instanceof Tameable tameable)) return;
+        if (!tameable.isTamed()) return;
+        Player player = event.getPlayer();
+        if (tameable.getOwner() == null || !tameable.getOwner().getUniqueId().equals(player.getUniqueId())) return;
+        markEntityCollected(player, horse);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onTrade(PlayerTradeEvent event) {
+        markEntityCollected(event.getPlayer(), event.getVillager());
     }
 
     private void markEntityCollected(Player player, Entity entity) {

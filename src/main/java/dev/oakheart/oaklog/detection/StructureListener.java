@@ -6,13 +6,17 @@ import dev.oakheart.oaklog.registry.EntryRegistry;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.Chunk;
+import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.generator.structure.GeneratedStructure;
 import org.bukkit.generator.structure.Structure;
 
@@ -35,15 +39,37 @@ public class StructureListener implements Listener {
     public void onMove(PlayerMoveEvent event) {
         if (!configManager.isStructureCheckOnChunkChange()) return;
         if (event.getFrom().getChunk().equals(event.getTo().getChunk())) return;
+        checkStructuresAt(event.getPlayer(), event.getTo());
+    }
 
-        Player player = event.getPlayer();
-        Chunk chunk = event.getTo().getChunk();
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onJoin(PlayerJoinEvent event) {
+        if (!configManager.isStructureCheckOnChunkChange()) return;
+        checkStructuresAt(event.getPlayer(), event.getPlayer().getLocation());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onTeleport(PlayerTeleportEvent event) {
+        if (!configManager.isStructureCheckOnChunkChange()) return;
+        checkStructuresAt(event.getPlayer(), event.getTo());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onWorldChange(PlayerChangedWorldEvent event) {
+        if (!configManager.isStructureCheckOnChunkChange()) return;
+        checkStructuresAt(event.getPlayer(), event.getPlayer().getLocation());
+    }
+
+    private void checkStructuresAt(Player player, Location location) {
+        if (location == null) return;
+        Chunk chunk = location.getChunk();
         Collection<GeneratedStructure> structures = chunk.getStructures();
         if (structures.isEmpty()) return;
 
         Registry<Structure> reg = RegistryAccess.registryAccess().getRegistry(RegistryKey.STRUCTURE);
-
+        var playerPos = location.toVector();
         for (GeneratedStructure generated : structures) {
+            if (!generated.getBoundingBox().contains(playerPos)) continue;
             Structure structure = generated.getStructure();
             NamespacedKey nk = reg.getKey(structure);
             if (nk == null) continue;

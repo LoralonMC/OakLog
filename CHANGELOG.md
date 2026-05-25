@@ -7,7 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Taming detection: wolves, cats, parrots and other tameable mobs are now collected the moment they're tamed via `EntityTameEvent`. Horses, donkeys, mules, llamas, trader llamas, and camels are additionally caught on the first right-click after taming as a safety net for the AbstractHorse code path. Previously, tamed mobs were only collected if the player also killed them.
+- Villager-trade detection: trading with a villager or wandering trader now collects that entity via `PlayerTradeEvent`. Previously the only way to collect a villager was to kill it or name-tag it.
+- Vehicle collection on right-click: right-clicking a boat or minecart now collects it. Previously these were only collectable by killing them.
+- Structure detection now runs on player join, teleport, and world change in addition to chunk-cross. Closes the hole where a player logging in or teleporting directly inside a structure (Mineshaft, Trial Chamber, Ancient City) wouldn't get it marked until they walked to a fresh chunk.
+- Per-biome and per-structure icon defaults (`enumeration/IconDefaults.java`) replace the blanket `GRASS_BLOCK` / `COBBLESTONE` placeholders. Each vanilla biome and structure now ships with a thematically appropriate block icon — e.g. plains → grass block, desert → sand, swamp → lily pad, cherry grove → cherry sapling, deep dark → sculk, the end → end stone, nether wastes → netherrack, ancient city → sculk shrieker, trial chambers → copper bulb, stronghold → end portal frame, monument → prismarine bricks, mansion → dark oak planks, village (per biome variant) → matching planks/sandstone. 65 biome icons and 34 structure icons in total. Modded biomes/structures and any vanilla entry not in the map continue to fall back to the generic defaults. Existing installs auto-migrate on next startup via the normal registry-sync display-data refresh.
+
 ### Fixed
+
+- Name-tag interaction no longer marks an entity unless the held name tag is actually renamed. Previously, right-clicking a mob with a blank name tag would falsely mark it — even though vanilla treats that interaction as a no-op.
+
+- Structure detection no longer credits a player just for walking through a chunk whose bounding box contains an underground structure. Previously, walking on the surface above a Mineshaft or Trial Chamber would mark it collected because `Chunk#getStructures()` returns every structure whose bounding box intersects the chunk, regardless of the player's Y. The listener now requires the player's position to actually be inside the structure's bounding box.
 
 - Typing `cancel` at the search prompt now cancels the search instead of searching for the literal string "cancel" — matching the behaviour the prompt message already advertised. Case-insensitive.
 

@@ -218,7 +218,7 @@ public class VanillaEnumerator {
                     "biome_" + nk.getKey(),
                     Category.BIOMES,
                     display,
-                    "GRASS_BLOCK",
+                    IconDefaults.biomeIcon(nk.getNamespace(), nk.getKey()),
                     null,
                     null
             ));
@@ -237,7 +237,7 @@ public class VanillaEnumerator {
                     "structure_" + nk.getKey(),
                     Category.STRUCTURES,
                     display,
-                    "COBBLESTONE",
+                    IconDefaults.structureIcon(nk.getNamespace(), nk.getKey()),
                     null,
                     null
             ));
