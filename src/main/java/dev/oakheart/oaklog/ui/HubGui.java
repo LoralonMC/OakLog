@@ -20,20 +20,21 @@ public class HubGui extends OakLogGui {
 
     private static final int PLAYER_HEAD_SLOT = 4;
 
-    // Category icons in row 1 (slots 9-17), filled left-to-right from slot 10.
+    // Categories laid out 4-per-row across rows 1 and 2 with one-slot gaps,
+    // matching the spread rhythm of the action-button row below.
     private static final Map<Integer, Category> CATEGORY_SLOTS;
     private static final EnumMap<Category, Material> CATEGORY_ICONS = new EnumMap<>(Category.class);
 
     static {
         CATEGORY_SLOTS = Map.of(
                 10, Category.BLOCKS,
-                11, Category.ITEMS,
-                12, Category.ENTITIES,
-                13, Category.BIOMES,
-                14, Category.STRUCTURES,
-                15, Category.EFFECTS,
-                16, Category.ENCHANTMENTS,
-                17, Category.ADVANCEMENTS
+                12, Category.ITEMS,
+                14, Category.ENTITIES,
+                16, Category.BIOMES,
+                19, Category.STRUCTURES,
+                21, Category.EFFECTS,
+                23, Category.ENCHANTMENTS,
+                25, Category.ADVANCEMENTS
         );
         CATEGORY_ICONS.put(Category.BLOCKS, Material.GRASS_BLOCK);
         CATEGORY_ICONS.put(Category.ITEMS, Material.APPLE);
@@ -45,10 +46,10 @@ public class HubGui extends OakLogGui {
         CATEGORY_ICONS.put(Category.ADVANCEMENTS, Material.KNOWLEDGE_BOOK);
     }
 
-    private static final int BTN_RECENT = 28;
-    private static final int BTN_SETS = 30;
-    private static final int BTN_SEARCH = 32;
-    private static final int BTN_LEADERBOARD = 34;
+    private static final int BTN_RECENT = 37;
+    private static final int BTN_SETS = 39;
+    private static final int BTN_SEARCH = 41;
+    private static final int BTN_LEADERBOARD = 43;
     private static final int BTN_CLOSE = 53;
 
     private final IconRenderer iconRenderer;
