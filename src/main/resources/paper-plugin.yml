@@ -23,6 +23,15 @@ dependencies:
     packetevents:
       load: BEFORE
       required: false
+    OakTools:
+      load: BEFORE
+      required: false
+    OakPets:
+      load: BEFORE
+      required: false
+    OakTags:
+      load: BEFORE
+      required: false
 permissions:
   oaklog.*:
     description: 'Grants all OakLog permissions'

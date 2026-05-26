@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- OakTools / OakPets / OakTags custom items were silently logged as their underlying vanilla material (e.g. the "Groundbreaker" excavator showing up as `STONE_SHOVEL`) when OakLog happened to enable before the host plugin. The three Oakheart adapters resolve their host via `PluginManager#getPlugins()` at `onEnable` time, and `paper-plugin.yml` didn't declare a load order — so on cold start the host wasn't always present yet and the adapter was dropped, blocking both enumeration and detection. OakTools, OakPets, and OakTags are now declared as `load: BEFORE` soft dependencies.
+- Sickle tier detection used the wrong PDC key (`oaktools:tool_tier` instead of `oaktools:tier`), so tiered sickles never matched their `sickle_<tier>` entry and fell back to their vanilla hoe material.
+
 - Name-tag interaction no longer marks an entity unless the held name tag is actually renamed. Previously, right-clicking a mob with a blank name tag would falsely mark it — even though vanilla treats that interaction as a no-op.
 
 - Structure detection no longer credits a player just for walking through a chunk whose bounding box contains an underground structure. Previously, walking on the surface above a Mineshaft or Trial Chamber would mark it collected because `Chunk#getStructures()` returns every structure whose bounding box intersects the chunk, regardless of the player's Y. The listener now requires the player's position to actually be inside the structure's bounding box.

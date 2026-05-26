@@ -83,7 +83,7 @@ public class OakToolsAdapter implements EntryAdapter {
             } catch (Throwable ignored) {
                 // older OakTools without tiered sickles; SICKLE will be skipped
             }
-            toolTierKey = new NamespacedKey(NAMESPACE, "tool_tier");
+            toolTierKey = new NamespacedKey(NAMESPACE, "tier");
             return true;
         } catch (Throwable t) {
             logger.log(Level.FINE, "OakTools adapter unavailable: " + t.getClass().getSimpleName());
