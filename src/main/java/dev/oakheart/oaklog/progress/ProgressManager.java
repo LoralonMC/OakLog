@@ -67,7 +67,7 @@ public class ProgressManager implements Listener {
             if (toast == null) {
                 toast = ToastState.fromString(configManager.getToastDefaultState());
             }
-            PlayerProgress progress = new PlayerProgress(uuid, collected.keySet(), recent, toast);
+            PlayerProgress progress = new PlayerProgress(uuid, collected, recent, toast);
             online.put(uuid, progress);
             plugin.debug("Loaded progress for " + event.getPlayer().getName() + ": "
                     + progress.collectedCount() + " entries collected");

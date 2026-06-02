@@ -47,15 +47,7 @@ public class IconRenderer {
 
     public ItemStack build(Entry entry, PlayerProgress progress) {
         boolean collected = progress != null && progress.isCollected(entry.id());
-        Long collectedAt = null;
-        if (collected) {
-            for (var recent : progress.snapshotRecent()) {
-                if (recent.entryId() == entry.id()) {
-                    collectedAt = recent.collectedAt();
-                    break;
-                }
-            }
-        }
+        Long collectedAt = collected ? progress.collectedAt(entry.id()) : null;
 
         TagResolver entryTag = Placeholder.unparsed("entry", entry.displayName());
         TagResolver dateTag = Placeholder.unparsed("date",
@@ -158,9 +150,7 @@ public class IconRenderer {
             lore.add(Component.empty());
         }
         String loreKey = collected ? "gui.entry.lore-collected" : "gui.entry.lore-uncollected";
-        messages.parse(loreKey, entryTag, dateTag)
-                .map(c -> c.decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE))
-                .ifPresent(lore::add);
+        lore.addAll(messages.parseLines(loreKey, entryTag, dateTag));
         meta.lore(lore);
 
         // Stored/template icons get all hide flags. Live custom icons keep
@@ -185,12 +175,7 @@ public class IconRenderer {
                 .ifPresent(meta::displayName);
 
         if (loreKey != null) {
-            List<Component> lore = new ArrayList<>();
-            messages.parse(loreKey, resolvers)
-                    .map(c -> c.decorationIfAbsent(net.kyori.adventure.text.format.TextDecoration.ITALIC,
-                            net.kyori.adventure.text.format.TextDecoration.State.FALSE))
-                    .ifPresent(lore::add);
-            meta.lore(lore);
+            meta.lore(messages.parseLines(loreKey, resolvers));
         }
 
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);

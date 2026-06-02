@@ -66,8 +66,13 @@ gui:
     # Available placeholders: <entry>, <date>
     name-collected: ""
     name-uncollected: ""
-    lore-collected: "<#f2ebd7>Status: <#8FAA87>✓ Collected<#6C757D> · <#f2ebd7>Obtained: <#FCD472><date>"
-    lore-uncollected: "<#f2ebd7>Status: <#C27B6B>✗ Not yet collected"
+    # Lore accepts either a single string or a list of lines (one per lore row).
+    # A blank "" entry renders as an empty spacer line.
+    lore-collected:
+      - "<#f2ebd7>Status: <#8FAA87>✓ Collected"
+      - "<#f2ebd7>Obtained: <#FCD472><date>"
+    lore-uncollected:
+      - "<#f2ebd7>Status: <#C27B6B>✗ Not yet collected"
 
   button:
     recent: "<#FCD472>Recent Activity"
