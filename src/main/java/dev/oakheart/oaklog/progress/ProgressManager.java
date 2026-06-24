@@ -92,6 +92,12 @@ public class ProgressManager implements Listener {
         PlayerProgress progress = online.get(uuid);
         if (progress == null) return false;
 
+        if (configManager.isGamemodeIgnored(player.getGameMode())) {
+            plugin.debug(player.getName() + " is in ignored game mode "
+                    + player.getGameMode() + "; skipping collection of entry " + entryId);
+            return false;
+        }
+
         long now = System.currentTimeMillis();
         if (!progress.markCollected(entryId, now)) {
             return false;

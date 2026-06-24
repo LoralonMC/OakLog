@@ -1,11 +1,13 @@
 package dev.oakheart.oaklog.config;
 
 import dev.oakheart.oaklog.OakLog;
+import org.bukkit.GameMode;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -28,6 +30,7 @@ public class ConfigManager {
     // Detection
     private int biomeCheckInterval;
     private boolean structureCheckOnChunkChange;
+    private Set<GameMode> ignoredGamemodes;
     private List<String> excludedItems;
     private List<String> excludedEntries;
 
@@ -71,7 +74,7 @@ public class ConfigManager {
             throw new RuntimeException("Failed to load config.yml", e);
         }
 
-        mergeDefaults();
+        evolveConfig();
         validate(config);
         cacheValues();
     }
@@ -96,15 +99,22 @@ public class ConfigManager {
         return true;
     }
 
-    private void mergeDefaults() {
+    private void evolveConfig() {
         try (var stream = plugin.getResource("config.yml")) {
             if (stream == null) return;
             var defaults = dev.oakheart.config.ConfigManager.fromStream(stream);
-            if (config.mergeDefaults(defaults)) {
+            // Additive: insert missing keys at the right position with their comments.
+            boolean merged = config.mergeDefaults(defaults);
+            // Documentation: 3-way sync of changed comments onto existing keys, never
+            // clobbering admin-customized comments (seeds baseline on first run).
+            boolean synced = config.syncComments(defaults,
+                    configFile.getParent().resolve(".oakheart/config-baseline.yml"));
+            if (merged || synced) {
                 config.save();
+                logger.info("Config evolved (merged defaults / synced comments).");
             }
         } catch (IOException e) {
-            logger.warning("Failed to merge config defaults: " + e.getMessage());
+            logger.log(Level.WARNING, "Failed to evolve config", e);
         }
     }
 
@@ -151,6 +161,14 @@ public class ConfigManager {
             warnings.add("storage.filename must not be blank, defaulting to oaklog.db");
         }
 
+        for (String name : configToValidate.getStringList("detection.ignored-gamemodes")) {
+            try {
+                GameMode.valueOf(name.trim().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException e) {
+                warnings.add("detection.ignored-gamemodes contains unknown game mode '" + name + "', ignoring it");
+            }
+        }
+
         if (!warnings.isEmpty()) {
             logger.warning("=== Configuration Warnings ===");
             warnings.forEach(w -> logger.warning("  - " + w));
@@ -174,6 +192,7 @@ public class ConfigManager {
         excludedEntries = rawExcludedEntries.stream()
                 .map(s -> s.toLowerCase(Locale.ROOT))
                 .toList();
+        ignoredGamemodes = parseGamemodes(config.getStringList("detection.ignored-gamemodes"));
 
         storageFilename = config.getString("storage.filename", "oaklog.db");
         if (storageFilename == null || storageFilename.isBlank()) {
@@ -198,6 +217,18 @@ public class ConfigManager {
         dateTimezone = config.getString("date-timezone", "system");
     }
 
+    private Set<GameMode> parseGamemodes(List<String> names) {
+        Set<GameMode> modes = EnumSet.noneOf(GameMode.class);
+        for (String name : names) {
+            try {
+                modes.add(GameMode.valueOf(name.trim().toUpperCase(Locale.ROOT)));
+            } catch (IllegalArgumentException ignored) {
+                // Unknown names are reported as warnings in validate(); skip them here.
+            }
+        }
+        return modes;
+    }
+
     // --- Getters ---
 
     public dev.oakheart.config.ConfigManager getConfig() {
@@ -218,6 +249,14 @@ public class ConfigManager {
 
     public boolean isStructureCheckOnChunkChange() {
         return structureCheckOnChunkChange;
+    }
+
+    public Set<GameMode> getIgnoredGamemodes() {
+        return Collections.unmodifiableSet(ignoredGamemodes);
+    }
+
+    public boolean isGamemodeIgnored(GameMode mode) {
+        return ignoredGamemodes.contains(mode);
     }
 
     public List<String> getExcludedItems() {

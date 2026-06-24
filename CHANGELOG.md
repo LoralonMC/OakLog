@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `detection.ignored-gamemodes` config option (default `[CREATIVE, SPECTATOR]`) suppresses collection logging while a player is in any listed game mode. This closes the exploit where the creative inventory trivially fills the Items/Blocks/Enchantments logs by clicking through the creative menu (which fires the same `PlayerInventorySlotChangeEvent` used for detection), and stops spectators from auto-collecting biomes and structures by flying through them. The gate is enforced at the single detection chokepoint so it covers all categories uniformly. Admin `/oaklog grant` is unaffected, and already-earned advancements still backfill on join regardless of the player's current mode. Set to `[]` to log in every game mode. Existing configs pick up the new key automatically on next startup.
+
+### Changed
+
+- Config now syncs leading-comment changes from the bundled defaults onto existing `config.yml` files on startup (via OakheartLib's `syncComments`), in addition to the existing missing-key merge. A persisted baseline at `plugins/OakLog/.oakheart/config-baseline.yml` is used as the 3-way merge base, so admin-customized comments are never overwritten — only comments the admin left at their default value pick up upstream wording changes. The first run after this update just seeds the baseline; comment syncing takes effect from the next update onward.
+
+### Added
+
 - Entry lore in `messages.yml` (`gui.entry.lore-collected` / `gui.entry.lore-uncollected`) now accepts a list of lines, each rendered as its own lore row — so the "Obtained" date can sit on a line below the collection status instead of sharing one line. A single string still works for one-line lore, and a blank `""` list entry renders as a spacer. The default config now ships the collected/uncollected lore in the two-line list form. Existing servers keep their current single-line value untouched (it is not auto-converted — edit it into a list to opt in).
 - Hub GUI layout reflows the eight categories into a 4×2 spread grid across rows 1 and 2 (slots 10/12/14/16 and 19/21/23/25), with the Recent / Sets / Search / Leaderboard action buttons pushed down one row from row 3 to row 4 (slots 37/39/41/43). The single 8-category row introduced last release was left-justified after the Advancements addition; the new grid is symmetric and matches the visual rhythm of the action row below.
 

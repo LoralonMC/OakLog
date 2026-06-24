@@ -37,6 +37,17 @@ detection:
   # Whether to detect structures the player walks into. Polled on chunk-change events.
   structure-check-on-chunk-change: true
 
+  # Game modes in which collection logging is suppressed. A player in one of these
+  # modes won't collect anything (items, blocks, entities, biomes, structures, etc.).
+  # This stops the creative inventory from trivially filling the Items/Blocks/Enchantments
+  # logs, and stops spectators from auto-collecting biomes/structures by flying through them.
+  # Valid values: SURVIVAL, CREATIVE, ADVENTURE, SPECTATOR. Set to [] to log in every mode.
+  # Note: admin '/oaklog grant' is never affected, and a player's already-earned
+  # advancements still backfill on join regardless of their current game mode.
+  ignored-gamemodes:
+    - CREATIVE
+    - SPECTATOR
+
   # Materials that should NOT be trackable as Items or Blocks (creative-only or unobtainable).
   # Supports glob patterns with '*' — e.g. '*_spawn_egg' excludes every spawn egg.
   # Remove an entry to make it trackable. These materials are skipped entirely - they won't
