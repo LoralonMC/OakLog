@@ -68,16 +68,33 @@ public class ProgressManager implements Listener {
                 toast = ToastState.fromString(configManager.getToastDefaultState());
             }
             PlayerProgress progress = new PlayerProgress(uuid, collected, recent, toast);
-            online.put(uuid, progress);
-            plugin.debug("Loaded progress for " + event.getPlayer().getName() + ": "
-                    + progress.collectedCount() + " entries collected");
+            // Publish on the main thread and only while the player is still
+            // online: a join-and-instant-quit otherwise re-inserts the entry
+            // AFTER the quit handler removed it, leaking it forever.
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (!event.getPlayer().isOnline()) return;
+                online.put(uuid, progress);
+                plugin.debug("Loaded progress for " + event.getPlayer().getName() + ": "
+                        + progress.collectedCount() + " entries collected");
+            });
         });
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
-        flushPlayerSync(uuid);
+        // Drain on the main thread, write off it: a synchronous DB transaction
+        // per quit stacks up badly during quit storms (restart broadcast).
+        Map<Integer, Long> pending = dirty.remove(uuid);
+        if (pending != null && !pending.isEmpty()) {
+            Map<UUID, Map<Integer, Long>> single = Map.of(uuid, pending);
+            if (plugin.isEnabled()) {
+                Bukkit.getScheduler().runTaskAsynchronously(plugin,
+                        () -> dataStore.batchInsertCollected(single));
+            } else {
+                dataStore.batchInsertCollected(single);
+            }
+        }
         if (configManager.isCacheEvictOnQuit()) {
             online.remove(uuid);
         }
@@ -103,7 +120,7 @@ public class ProgressManager implements Listener {
             return false;
         }
 
-        dirty.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>()).put(entryId, now);
+        markDirty(uuid, entryId, now);
 
         Entry entry = registry.get(entryId);
         if (entry != null) {
@@ -124,7 +141,7 @@ public class ProgressManager implements Listener {
         if (progress == null) return false;
         long now = System.currentTimeMillis();
         if (!progress.markCollected(entryId, now)) return false;
-        dirty.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>()).put(entryId, now);
+        markDirty(uuid, entryId, now);
         return true;
     }
 
@@ -134,7 +151,24 @@ public class ProgressManager implements Listener {
         if (progress != null) {
             progress.markCollected(entryId, now);
         }
-        dirty.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>()).put(entryId, now);
+        markDirty(uuid, entryId, now);
+    }
+
+    /**
+     * Records a pending write for the flush task. The put must be re-checked:
+     * the async flush drains buckets via {@code dirty.remove(uuid)}, and a drain
+     * that lands between the computeIfAbsent and the put leaves this write in an
+     * orphaned map that is never flushed. PlayerProgress already reports the
+     * entry as collected in memory, so the row would never be retried — the
+     * collection silently vanishes on relog. A rare duplicate insert from the
+     * re-home is harmless; the store upserts.
+     */
+    private void markDirty(UUID uuid, int entryId, long timestamp) {
+        Map<Integer, Long> bucket = dirty.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>());
+        bucket.put(entryId, timestamp);
+        if (dirty.get(uuid) != bucket) {
+            dirty.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>()).put(entryId, timestamp);
+        }
     }
 
     public void revoke(UUID uuid, int entryId) {
@@ -152,7 +186,11 @@ public class ProgressManager implements Listener {
     public int wipe(UUID uuid) {
         PlayerProgress progress = online.get(uuid);
         if (progress != null) {
-            online.remove(uuid);
+            // Replace with a fresh empty progress instead of removing: nothing
+            // reloads the entry while the player stays online, so removal
+            // silently disables all collection tracking until they relog.
+            online.put(uuid, new PlayerProgress(uuid, new HashMap<>(),
+                    new java.util.ArrayList<>(), progress.toastState()));
         }
         dirty.remove(uuid);
         return dataStore.deleteAllCollected(uuid);
@@ -183,24 +221,19 @@ public class ProgressManager implements Listener {
 
     private void flushDirty() {
         if (dirty.isEmpty()) return;
+        // Drain per-key with remove(): the old snapshot-then-clear() wiped any
+        // entry inserted between the copy and the clear without ever writing it,
+        // and markCollected never retries (memory already says collected).
         Map<UUID, Map<Integer, Long>> snapshot = new HashMap<>();
-        for (Map.Entry<UUID, Map<Integer, Long>> e : dirty.entrySet()) {
-            Map<Integer, Long> copy = new HashMap<>(e.getValue());
-            if (!copy.isEmpty()) {
-                snapshot.put(e.getKey(), copy);
+        for (UUID uuid : dirty.keySet()) {
+            Map<Integer, Long> pending = dirty.remove(uuid);
+            if (pending != null && !pending.isEmpty()) {
+                snapshot.put(uuid, pending);
             }
         }
-        dirty.clear();
         if (!snapshot.isEmpty()) {
             dataStore.batchInsertCollected(snapshot);
         }
-    }
-
-    private void flushPlayerSync(UUID uuid) {
-        Map<Integer, Long> pending = dirty.remove(uuid);
-        if (pending == null || pending.isEmpty()) return;
-        Map<UUID, Map<Integer, Long>> single = Map.of(uuid, pending);
-        dataStore.batchInsertCollected(single);
     }
 
     private void flushAllSync() {
