@@ -112,5 +112,17 @@ public interface DataStore {
      */
     int collectedCountOverall(UUID playerUuid);
 
-    record LeaderboardRow(UUID playerUuid, int collectedCount) {}
+    /**
+     * Returns the timestamp of this player's most recently collected live entry,
+     * or 0 if they have collected nothing. Leaderboard tiebreaker: among equal
+     * counts, whoever REACHED that count first (older latest-entry timestamp)
+     * ranks higher — first to finish the log permanently holds #1.
+     */
+    long latestCollectedAt(UUID playerUuid);
+
+    /**
+     * @param latestCollectedAt when the player's newest counted entry was
+     *        collected — for a full log, the moment they completed it
+     */
+    record LeaderboardRow(UUID playerUuid, int collectedCount, long latestCollectedAt) {}
 }

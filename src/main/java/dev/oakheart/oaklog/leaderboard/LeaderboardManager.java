@@ -60,13 +60,21 @@ public class LeaderboardManager {
         if (cached != null) return cached;
 
         int playerCount = dataStore.collectedCountOverall(uuid);
-        // Rank = (number of players with strictly higher count) + 1. We don't
-        // have a cheap "all players' counts" query, so for now we count via
-        // the cached top list and fall back to "outside top N" when applicable.
+        long playerLatest = dataStore.latestCollectedAt(uuid);
+        // Rank = (number of players strictly ahead) + 1, where "ahead" uses the
+        // same rule as the board's ORDER BY: higher count, or an equal count
+        // reached earlier. The two definitions must match or ties diverge —
+        // without the tiebreak every full-log completer read as #1 here while
+        // the GUI numbered them by arbitrary list position. We don't have a
+        // cheap "all players" query, so this counts via the cached top list
+        // and degrades to "outside top N" beyond it.
         int rank = 1;
         for (DataStore.LeaderboardRow row : topOverall) {
-            if (row.collectedCount() > playerCount) rank++;
-            else if (row.playerUuid().equals(uuid)) break;
+            if (row.playerUuid().equals(uuid)) break;
+            if (row.collectedCount() > playerCount
+                    || (row.collectedCount() == playerCount && row.latestCollectedAt() < playerLatest)) {
+                rank++;
+            }
         }
         rankCache.put(uuid, rank);
         return rank;

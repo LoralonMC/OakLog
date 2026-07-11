@@ -435,13 +435,17 @@ public class SqliteStore implements DataStore {
 
     @Override
     public synchronized List<LeaderboardRow> topOverall(int limit) {
+        // Tiebreaker: among equal counts, the player who reached that count
+        // first (older MAX(collected_at)) ranks higher. Without it, tied
+        // players — every full-log completer — sort in arbitrary, unstable
+        // order and "first to finish" means nothing.
         String sql = """
-                SELECT c.player_uuid AS uuid, COUNT(*) AS count
+                SELECT c.player_uuid AS uuid, COUNT(*) AS count, MAX(c.collected_at) AS latest
                 FROM collected c
                 JOIN entries e ON c.entry_id = e.id
                 WHERE e.retired_at IS NULL
                 GROUP BY c.player_uuid
-                ORDER BY count DESC
+                ORDER BY count DESC, latest ASC
                 LIMIT ?
                 """;
         return runLeaderboardQuery(sql, stmt -> stmt.setInt(1, limit));
@@ -450,12 +454,12 @@ public class SqliteStore implements DataStore {
     @Override
     public synchronized List<LeaderboardRow> topByCategory(dev.oakheart.oaklog.model.Category category, int limit) {
         String sql = """
-                SELECT c.player_uuid AS uuid, COUNT(*) AS count
+                SELECT c.player_uuid AS uuid, COUNT(*) AS count, MAX(c.collected_at) AS latest
                 FROM collected c
                 JOIN entries e ON c.entry_id = e.id
                 WHERE e.retired_at IS NULL AND e.category = ?
                 GROUP BY c.player_uuid
-                ORDER BY count DESC
+                ORDER BY count DESC, latest ASC
                 LIMIT ?
                 """;
         return runLeaderboardQuery(sql, stmt -> {
@@ -484,6 +488,26 @@ public class SqliteStore implements DataStore {
         }
     }
 
+    @Override
+    public synchronized long latestCollectedAt(UUID playerUuid) {
+        String sql = """
+                SELECT MAX(c.collected_at) AS latest
+                FROM collected c
+                JOIN entries e ON c.entry_id = e.id
+                WHERE c.player_uuid = ? AND e.retired_at IS NULL
+                """;
+        try {
+            PreparedStatement stmt = prepareCached(sql);
+            stmt.setString(1, playerUuid.toString());
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? rs.getLong("latest") : 0L;
+            }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to read latest collection for " + playerUuid, e);
+            return 0L;
+        }
+    }
+
     private List<LeaderboardRow> runLeaderboardQuery(String sql, StatementBinder binder) {
         List<LeaderboardRow> rows = new ArrayList<>();
         try {
@@ -493,7 +517,8 @@ public class SqliteStore implements DataStore {
                 while (rs.next()) {
                     UUID uuid = UUID.fromString(rs.getString("uuid"));
                     int count = rs.getInt("count");
-                    rows.add(new LeaderboardRow(uuid, count));
+                    long latest = rs.getLong("latest");
+                    rows.add(new LeaderboardRow(uuid, count, latest));
                 }
             }
         } catch (SQLException e) {
