@@ -125,6 +125,22 @@ detection:
     - 'minecraft:entity_giant'         # legacy unused mob; /summon only
     - 'minecraft:entity_illusioner'    # /summon only
     - 'minecraft:entity_mannequin'     # testing entity
+    # Parrot#isBaby() is hard-coded to return false, so no parrot is ever a baby:
+    # not by breeding (canMate false, getBreedOffspring null), not on spawn
+    # (shouldSpawnBaby false) and not from a spawn egg.
+    - 'minecraft:entity_parrot_*_baby'
+    # Zombie horses spawn one per group (minCount = maxCount = 1) and the baby roll
+    # in AgeableMob#finalizeSpawn only applies from the second mob of a group on, so
+    # the natural spawn never yields one. They also can't breed (canFallInLove false)
+    # or grow up (canAgeUp false). Spawn egg only, at 20%.
+    - 'minecraft:entity_zombie_horse_baby'
+    # The four unused painting variants: absent from the #placeable tag, so placing a
+    # painting never rolls them, and no vanilla structure template places a painting
+    # (checked all 1202 structure NBTs). The remaining 47 are obtainable.
+    - 'minecraft:entity_painting_earth'
+    - 'minecraft:entity_painting_wind'
+    - 'minecraft:entity_painting_fire'
+    - 'minecraft:entity_painting_water'
 
 # ============================================================
 # STORAGE

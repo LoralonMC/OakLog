@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-08-19
+
+### Fixed
+
+- Paintings are collectable. Every painting variant had an entry (`VanillaEnumerator#isCollectableEntity` whitelists `PAINTING`) and no way to reach it: a painting is not a `LivingEntity`, so `EntityDeathEvent` never fires for one, and breaking it goes to `HangingBreakByEntityEvent`, which nothing listened for. All 51 variants sat at zero collections across 442 players. Detection now credits the painting's variant both when a player hangs one (`HangingPlaceEvent`, where vanilla has already rolled the variant in `Painting#create` and applied any variant stored on the item, so the art is final) and when a player breaks one.
+- Instant Health and Instant Damage are collectable. Vanilla splits potion application in `PotionContents#applyToLivingEntity`: an instantaneous effect goes straight to `MobEffect#applyInstantenousEffect` and never touches `LivingEntity#addEffect`, which is the only place CraftBukkit fires `EntityPotionEffectEvent`. Neither effect could ever be seen. They are now read off the potion itself on the three paths a player meets one: drinking (`PlayerItemConsumeEvent`), being splashed (`PotionSplashEvent`, skipping anyone whose intensity another plugin zeroed), and standing in a lingering cloud (`AreaEffectCloudApplyEvent`). Timed effects from those same potions are still left to the effect event rather than marked twice.
+- Structure bounding boxes are no longer a block short. Vanilla stores structure boxes as inclusive block coordinates and `CraftGeneratedStructure#getBoundingBox` copies `minX..maxX` straight into a Bukkit `BoundingBox`, whose max is exclusive, so every box lost its `+X/+Y/+Z` edge. Buried Treasure is a single 1x1x1 piece around the chest, which collapsed the box to zero volume: containment demanded exactly integral player coordinates, so standing on the chest at `x.5, z.5` never matched. Confirmed against live data, where 45 players held a Heart of the Sea, which drops from nowhere else, and none had the structure. Boxes are now expanded by one block on the max corner before any containment or footprint test.
+
+### Changed
+
+- Default `detection.excluded-entries` now covers three entity groups that cannot occur in survival, verified against the 26.1.2 sources: baby parrots (`Parrot#isBaby()` is hard-coded to `false`, and the mob can neither breed nor spawn as a baby), the baby zombie horse (its natural spawn is `minCount = maxCount = 1`, and `AgeableMob#finalizeSpawn` only rolls a baby from the second mob of a group on; it also cannot breed or age up), and the four painting variants outside the `#placeable` tag (Earth, Wind, Fire, Water), which no vanilla structure template places either.
+
 ## [1.2.0] - 2026-08-01
 
 ### Fixed

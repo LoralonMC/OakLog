@@ -14,6 +14,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Minecart;
+import org.bukkit.entity.Painting;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Tameable;
 import org.bukkit.event.EventHandler;
@@ -21,6 +22,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityTameEvent;
+import org.bukkit.event.hanging.HangingBreakByEntityEvent;
+import org.bukkit.event.hanging.HangingPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -89,6 +92,29 @@ public class EntityListener implements Listener {
         Player player = event.getPlayer();
         if (tameable.getOwner() == null || !tameable.getOwner().getUniqueId().equals(player.getUniqueId())) return;
         markEntityCollected(player, horse);
+    }
+
+    // Paintings are the one non-living entity with entries (see VanillaEnumerator's
+    // isCollectableEntity), so none of the paths above reach them: EntityDeathEvent
+    // only fires for a LivingEntity, and a painting is neither tameable nor rideable.
+    // Hanging the painting is the gesture that reveals which variant you got, and
+    // vanilla rolls it in Painting#create and applies the item's stored variant
+    // before firing this event, so the art is final here.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onHangingPlace(HangingPlaceEvent event) {
+        Player player = event.getPlayer();
+        if (player == null) return;
+        if (!(event.getEntity() instanceof Painting painting)) return;
+        markEntityCollected(player, painting);
+    }
+
+    // Breaking one credits it too, which is what a player who found a painting
+    // rather than placed it will try.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onHangingBreak(HangingBreakByEntityEvent event) {
+        if (!(event.getRemover() instanceof Player player)) return;
+        if (!(event.getEntity() instanceof Painting painting)) return;
+        markEntityCollected(player, painting);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

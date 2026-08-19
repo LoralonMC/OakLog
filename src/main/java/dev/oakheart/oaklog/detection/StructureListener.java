@@ -172,7 +172,7 @@ public class StructureListener implements Listener {
             for (GeneratedStructure generated : structures) {
                 NamespacedKey nk = reg.getKey(generated.getStructure());
                 if (nk == null) continue;
-                BoundingBox bb = generated.getBoundingBox();
+                BoundingBox bb = blockBox(generated);
                 collected.add(new StructureBox(nk, bb,
                         isSmallFootprint(bb) || floatsAboveTerrain(world, bb)));
             }
@@ -221,7 +221,7 @@ public class StructureListener implements Listener {
                         + ": getStructures() -> " + found.size());
                 for (GeneratedStructure gs : found) {
                     NamespacedKey nk = reg.getKey(gs.getStructure());
-                    BoundingBox bb = gs.getBoundingBox();
+                    BoundingBox bb = blockBox(gs);
                     Integer id = nk == null ? null
                             : registry.idFor(nk.getNamespace(), "structure_" + nk.getKey());
                     PlayerProgress prog = progressManager.get(player.getUniqueId());
@@ -244,6 +244,26 @@ public class StructureListener implements Listener {
             }
         }
         return out;
+    }
+
+    /**
+     * The structure's bounding box, corrected to cover the blocks it names.
+     *
+     * <p>Vanilla stores structure boxes as <em>inclusive</em> block coordinates, and
+     * {@code CraftGeneratedStructure#getBoundingBox} copies {@code minX..maxX} straight
+     * into a Bukkit {@link BoundingBox}, whose max is exclusive. Every box therefore
+     * stops one block short on +X/+Y/+Z, and a structure that is a single block wide
+     * collapses to zero volume: containment then demands the player's coordinates be
+     * exactly integral, which standing on a block (x.5, z.5) never is.
+     *
+     * <p>Buried Treasure is the case that made this visible. Its only piece is a 1x1x1
+     * box around the chest, so the entry was uncollectable outright. 45 players held a
+     * Heart of the Sea, which drops from nowhere else, and none had the structure.
+     */
+    private static BoundingBox blockBox(GeneratedStructure generated) {
+        BoundingBox raw = generated.getBoundingBox();
+        return new BoundingBox(raw.getMinX(), raw.getMinY(), raw.getMinZ(),
+                raw.getMaxX() + 1, raw.getMaxY() + 1, raw.getMaxZ() + 1);
     }
 
     /**
