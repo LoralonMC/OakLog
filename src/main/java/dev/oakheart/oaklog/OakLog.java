@@ -65,6 +65,7 @@ public final class OakLog extends JavaPlugin {
     private SetComputer setComputer;
     private LeaderboardManager leaderboardManager;
     private BiomeListener biomeListener;
+    private StructureListener structureListener;
     private AuditLog auditLog;
     private ToastService toastService;
     private SearchInput searchInput;
@@ -81,6 +82,7 @@ public final class OakLog extends JavaPlugin {
             progressManager.start();
             leaderboardManager.start();
             biomeListener.start();
+            structureListener.start();
             initializeMetrics();
             registerPlaceholders();
 
@@ -98,6 +100,9 @@ public final class OakLog extends JavaPlugin {
     public void onDisable() {
         if (biomeListener != null) {
             biomeListener.shutdown();
+        }
+        if (structureListener != null) {
+            structureListener.shutdown();
         }
         if (leaderboardManager != null) {
             leaderboardManager.shutdown();
@@ -182,8 +187,8 @@ public final class OakLog extends JavaPlugin {
                 new EffectListener(entryRegistry, progressManager), this);
         getServer().getPluginManager().registerEvents(
                 new EnchantmentListener(entryRegistry, progressManager), this);
-        getServer().getPluginManager().registerEvents(
-                new StructureListener(configManager, entryRegistry, progressManager), this);
+        structureListener = new StructureListener(this, configManager, entryRegistry, progressManager);
+        getServer().getPluginManager().registerEvents(structureListener, this);
         getServer().getPluginManager().registerEvents(
                 new AdvancementListener(this, entryRegistry, progressManager), this);
         getServer().getPluginManager().registerEvents(new GuiListener(), this);
@@ -230,6 +235,10 @@ public final class OakLog extends JavaPlugin {
             getLogger().info("Debug mode is enabled.");
         }
         return true;
+    }
+
+    public StructureListener getStructureListener() {
+        return structureListener;
     }
 
     public ConfigManager getConfigManager() {

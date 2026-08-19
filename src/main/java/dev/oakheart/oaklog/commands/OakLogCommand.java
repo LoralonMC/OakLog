@@ -50,6 +50,7 @@ public class OakLogCommand {
                 .then(buildRevokeCommand())
                 .then(buildReloadCommand())
                 .then(buildInfoCommand())
+                .then(buildDebugCommand())
                 .build();
 
         String alias = plugin.getConfigManager().getCommandAlias();
@@ -375,6 +376,27 @@ public class OakLogCommand {
         }
         plugin.getLeaderboardManager().invalidate();
         return count;
+    }
+
+    // --- /oaklog debug structures ---
+
+    private LiteralCommandNode<CommandSourceStack> buildDebugCommand() {
+        return Commands.literal("debug")
+                .requires(s -> s.getSender().hasPermission("oaklog.admin.info"))
+                .then(Commands.literal("structures")
+                        .executes(ctx -> {
+                            CommandSender sender = ctx.getSource().getSender();
+                            if (!(sender instanceof Player player)) {
+                                sender.sendMessage(net.kyori.adventure.text.Component
+                                        .text("Run this in-game, standing where detection should fire."));
+                                return Command.SINGLE_SUCCESS;
+                            }
+                            for (String line : plugin.getStructureListener().diagnose(player)) {
+                                sender.sendMessage(net.kyori.adventure.text.Component.text(line));
+                            }
+                            return Command.SINGLE_SUCCESS;
+                        }))
+                .build();
     }
 
     // --- /oaklog reload ---

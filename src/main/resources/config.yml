@@ -34,8 +34,32 @@ detection:
   # How often (in ticks) to check the player's current biome. 20 ticks = 1 second.
   biome-check-interval: 20
 
-  # Whether to detect structures the player walks into. Polled on chunk-change events.
+  # Master switch for detecting structures the player walks into. Sampled on chunk
+  # change, join, teleport and world change, plus the poll below.
   structure-check-on-chunk-change: true
+
+  # How often (in ticks) to check whether the player is standing inside a structure.
+  # Chunk-change sampling alone misses any structure small enough to sit inside one
+  # chunk (igloo, desert well, swamp hut): the only sample taken lands on the chunk
+  # border, never inside the structure. Set to 0 to disable the poll and go back to
+  # event-only sampling. Takes effect on server restart.
+  structure-check-interval: 20
+
+  # Structures this size or smaller (in blocks, horizontally) are matched on X/Z only,
+  # ignoring the height of their recorded bounding box. Vanilla's surface templates
+  # (igloos are the confirmed case) place their blocks at the real terrain height but
+  # save the box at the height that was sampled before the move, so on sloped ground the
+  # box can be tens of blocks away from the building. X/Z are always correct. For a
+  # structure a few blocks wide, standing in its column is conclusive on its own.
+  # Anything larger keeps the full 3D check, so walking over a mineshaft or an ancient
+  # city still doesn't collect it. Set to 0 to always require full 3D containment.
+  #
+  # Independently of this size rule, a box that sits entirely above the terrain is
+  # treated as X/Z-only no matter how large it is: nothing generates floating in the
+  # sky, so such a box is provably misplaced. That covers wider surface structures
+  # (a Desert Pyramid is 21x21) without loosening anything that is genuinely
+  # underground, like mineshafts, strongholds or ocean monuments.
+  structure-small-footprint: 16
 
   # Game modes in which collection logging is suppressed. A player in one of these
   # modes won't collect anything (items, blocks, entities, biomes, structures, etc.).

@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-08-01
+
+### Fixed
+
+- Structures whose recorded bounding box sits at the wrong height are now detectable. Vanilla's surface template pieces re-derive the terrain height when they place their blocks, shift the template down to it, write, and then restore the original position — so the saved `StructureStart` box keeps the height that was sampled at the chunk centre before the move. On flat ground the two agree; on a slope they diverge by the slope delta. Confirmed live on an igloo whose box was `y75..94` while the building's floor was at `y63` — a 27-block error, with nothing but air throughout the recorded box. No amount of standing inside such a structure could ever satisfy a 3D containment test.
+- Detection now matches structures on X/Z alone in two cases. First, a horizontal footprint of `detection.structure-small-footprint` (default 16) blocks or less — the move that breaks the box is vertical only, so X/Z are always correct, and for a structure a few blocks wide, being inside its column is conclusive. Second, regardless of size, a box that sits entirely above the terrain: nothing generates floating in the sky, so such a box is provably misplaced. Everything else keeps the full 3D test, preserving the 1.0.0 behaviour where walking over a mineshaft or ancient city doesn't collect it. Trade-off: standing directly beneath an affected structure now counts. Set the size key to 0 to disable the footprint rule; the floating-box rule always applies.
+- Audited every region file in all five populated dimensions (866 files, ~6,600 structure starts, 45 block samples spread through each recorded box, restricted to chunks at `Status: minecraft:full`). **Igloo is the only structure with confirmed misplaced boxes**: 9 of 21 sampled igloos, every one of them recording its box at exactly `y90..94` while the terrain sat at y67..81 — a fixed nominal anchor rather than random error, matching the hand-verified case. Everything else came back clean, including Mineshaft, Trial Chambers, Fortress, Bastion, Ancient City, Monument, Stronghold, Mansion, every village type, Desert Pyramid, Jungle Pyramid and Pillager Outpost, so the 3D check is preserved everywhere it matters. Two other non-zero results were investigated and are not this bug: Nether Fossil starts that placed no blocks at all (verified — no bone blocks anywhere in the column), and one Buried Treasure whose chest had presumably been dug up. All confirmed cases have a footprint of 10x10 or less, so the size rule alone would have covered them; the floating-box rule is retained as a guard for wider cases rather than because one was found.
+
+### Changed
+
+- `/oaklog debug structures` now reports the world surface height at the player's column, whether each structure is being matched `xz-only` or `3d`, and flags any structure the player is inside horizontally but not vertically as a likely wrong-height box.
+
+## [1.1.1] - 2026-08-01
+
+### Added
+
+- `/oaklog debug structures` (permission `oaklog.admin.info`) dumps every input the structure detection path uses at the player's current position: position and chunk, whether the poll task is running and at what interval, the master switch, game mode and whether it is suppressed, whether the player's progress is loaded, and for the 3×3 chunk neighbourhood every `GeneratedStructure` with its bounding box, whether the box contains the player, the resolved entry id, and whether it is already collected. Bypasses the per-player box memo and re-queries, so the output reflects the world rather than the cache.
+
+## [1.1.0] - 2026-08-01
+
+### Added
+
+- `detection.structure-check-interval` config option (default `20` ticks) polls whether each online player is standing inside a structure's bounding box, alongside the existing chunk-cross / join / teleport / world-change samples. Set to `0` for event-only sampling; takes effect on restart. `detection.structure-check-on-chunk-change` is now the master on/off switch for structure detection and gates the poll too.
+
+### Changed
+
+- Structure bounding boxes for the chunk a player occupies are memoized per player and invalidated on chunk change or quit, so the poll costs a map lookup and a long compare in the common case rather than a `Chunk#getStructures()` query per player per interval.
+
+### Fixed
+
+- Structures small enough to fit inside a single chunk (Igloo, Swamp Hut, Jungle Pyramid) were credited only by luck. Detection sampled the player's position when they crossed a chunk boundary, and the bounding-box containment requirement added in 1.0.0 means that sample has to land *inside* the structure. A real igloo measured off the live world spans x[4144..4150] z[3358..3367] with its dome entirely inside one chunk, so the ordinary walk-in / stand-around / walk-out path produced one sample, at the chunk border, outside the box. Credit happened only when a chunk line ran through the part of the structure the player was in, or when they logged in / teleported directly inside. The poll makes it reliable. Large structures were never affected, since you can't walk through a village or mansion without also crossing chunk lines.
+- Note: this does not backfill. A structure visited before this release stays uncollected until the player is inside its bounding box again.
+- Structure detection no longer risks a synchronous chunk load on the main thread. `PlayerTeleportEvent` fires before the player arrives, so `getTo()` can point at an unloaded chunk (long-range warps, RTP), and reading `Location#getChunk()` there would load/generate it inline. The listener now skips unloaded chunks and lets the poll pick the structure up once the player is actually there.
+- The `PlayerMoveEvent` handler compares chunk coordinates arithmetically instead of resolving two `Chunk` objects per move packet.
+
+## [1.0.0] - 2026-07-11
+
 ### Added
 
 - `detection.ignored-gamemodes` config option (default `[CREATIVE, SPECTATOR]`) suppresses collection logging while a player is in any listed game mode. This closes the exploit where the creative inventory trivially fills the Items/Blocks/Enchantments logs by clicking through the creative menu (which fires the same `PlayerInventorySlotChangeEvent` used for detection), and stops spectators from auto-collecting biomes and structures by flying through them. The gate is enforced at the single detection chokepoint so it covers all categories uniformly. Admin `/oaklog grant` is unaffected, and already-earned advancements still backfill on join regardless of the player's current mode. Set to `[]` to log in every game mode. Existing configs pick up the new key automatically on next startup.

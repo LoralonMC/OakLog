@@ -29,7 +29,9 @@ public class ConfigManager {
 
     // Detection
     private int biomeCheckInterval;
-    private boolean structureCheckOnChunkChange;
+    private boolean structureDetectionEnabled;
+    private int structureCheckInterval;
+    private int structureSmallFootprint;
     private Set<GameMode> ignoredGamemodes;
     private List<String> excludedItems;
     private List<String> excludedEntries;
@@ -183,7 +185,9 @@ public class ConfigManager {
         commandAlias = config.getString("command-alias", "log");
 
         biomeCheckInterval = Math.max(1, config.getInt("detection.biome-check-interval", 20));
-        structureCheckOnChunkChange = config.getBoolean("detection.structure-check-on-chunk-change", true);
+        structureDetectionEnabled = config.getBoolean("detection.structure-check-on-chunk-change", true);
+        structureCheckInterval = Math.max(0, config.getInt("detection.structure-check-interval", 20));
+        structureSmallFootprint = Math.max(0, config.getInt("detection.structure-small-footprint", 16));
         List<String> rawExcluded = config.getStringList("detection.excluded-items");
         excludedItems = rawExcluded.stream()
                 .map(s -> s.toLowerCase(Locale.ROOT))
@@ -247,8 +251,22 @@ public class ConfigManager {
         return biomeCheckInterval;
     }
 
-    public boolean isStructureCheckOnChunkChange() {
-        return structureCheckOnChunkChange;
+    /** Master switch for structure detection (both the event samples and the poll). */
+    public boolean isStructureDetectionEnabled() {
+        return structureDetectionEnabled;
+    }
+
+    /** Poll interval in ticks for the "am I standing in a structure" check; 0 disables the poll. */
+    public int getStructureCheckInterval() {
+        return structureCheckInterval;
+    }
+
+    /**
+     * Max horizontal size (blocks) at which a structure is matched on X/Z only, because
+     * its recorded bounding box can sit at the wrong height. 0 always requires full 3D.
+     */
+    public int getStructureSmallFootprint() {
+        return structureSmallFootprint;
     }
 
     public Set<GameMode> getIgnoredGamemodes() {
