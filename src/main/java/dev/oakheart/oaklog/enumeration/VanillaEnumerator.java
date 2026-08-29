@@ -37,13 +37,18 @@ public class VanillaEnumerator {
     /**
      * Ageable entity types whose baby form isn't naturally reachable in vanilla —
      * either because the "baby" stage is a separate EntityType (Frog/Tadpole) or
-     * because no baby variant spawns at all (Wandering Trader, Trader Llama).
+     * because no baby variant spawns at all (Wandering Trader).
+     *
+     * <p>Trader Llama was listed here and should not have been. It never <i>spawns</i>
+     * as a baby, but {@code TraderLlama#makeNewLlama} returns another TRADER_LLAMA, so
+     * breeding a pair produces one. Keep this list to types whose baby form is
+     * genuinely unreachable — and note a wrong entry no longer costs the player their
+     * collection, since {@code EntityListener} now falls back to the adult entry.</p>
      */
     private static final Set<EntityType> NO_BABY_ENTRY = EnumSet.of(
             EntityType.FROG,
             EntityType.TADPOLE,
-            EntityType.WANDERING_TRADER,
-            EntityType.TRADER_LLAMA
+            EntityType.WANDERING_TRADER
     );
 
     private final ConfigManager configManager;

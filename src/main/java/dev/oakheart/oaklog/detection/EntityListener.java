@@ -134,11 +134,19 @@ public class EntityListener implements Listener {
             }
         }
 
+        Integer entryId = null;
         if (entity instanceof Ageable ageable && !ageable.isAdult()) {
-            key = key + "_baby";
+            // Fall back to the adult entry when the species has no baby entry.
+            // VanillaEnumerator only emits "<key>_baby" for types whose baby form
+            // it believes is reachable, and when that judgement is wrong (it was
+            // for Trader Llama, which never spawns as a baby but does breed into
+            // one) the baby key resolves to nothing. Crediting the adult entry
+            // beats crediting nothing: the player did just meet the species.
+            entryId = registry.idFor(EntryKey.VANILLA, key + "_baby");
         }
-
-        Integer entryId = registry.idFor(EntryKey.VANILLA, key);
+        if (entryId == null) {
+            entryId = registry.idFor(EntryKey.VANILLA, key);
+        }
         if (entryId == null) return;
 
         progressManager.markCollected(player, entryId);
