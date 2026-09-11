@@ -35,6 +35,14 @@ public interface DataStore {
     void updateEntryDisplay(int id, String displayName, String iconMaterial, Integer iconModelData, String detectionMeta);
 
     /**
+     * Moves an entry to a different category. Kept separate from
+     * {@link #updateEntryDisplay} because placement and display data change for
+     * different reasons: an entry moves category without its name changing.
+     * Player progress is keyed on entry id, so this never affects collections.
+     */
+    void updateEntryCategory(int id, dev.oakheart.oaklog.model.Category category);
+
+    /**
      * Marks the given entry IDs as retired (sets retired_at to the current time).
      */
     void retireEntries(Collection<Integer> ids);
@@ -111,6 +119,16 @@ public interface DataStore {
      * Returns this player's collected count for live entries (all categories).
      */
     int collectedCountOverall(UUID playerUuid);
+
+    /**
+     * Overall collected count and latest timestamp for <em>every</em> player, in one grouped query.
+     *
+     * <p>Exists so placeholders never have to hit the database per player. Topper resolves
+     * {@code %oaklog_total_collected%} for every offline player it knows about, which previously
+     * meant one synchronized two-table JOIN per player on the main thread; that was measured at
+     * 42% of all tick-spike time (2026-09-03). Called from the async leaderboard refresh only.
+     */
+    Map<UUID, LeaderboardRow> allCollectedCounts();
 
     /**
      * Returns the timestamp of this player's most recently collected live entry,

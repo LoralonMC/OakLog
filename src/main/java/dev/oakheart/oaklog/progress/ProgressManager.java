@@ -204,17 +204,32 @@ public class ProgressManager implements Listener {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> dataStore.saveToastState(uuid, state));
     }
 
+    /**
+     * Live entries this player has collected.
+     *
+     * <p>Retired entries are excluded. The player keeps the collection row (so it
+     * counts again if the entry ever comes back), but it must not be counted here:
+     * the totals this is displayed against come from {@code liveCount()}, which
+     * excludes retired entries, so counting them would show more collected than
+     * exist and push percentages past 100%.
+     */
     public int collectedCount(UUID uuid) {
         PlayerProgress progress = online.get(uuid);
-        return progress == null ? 0 : progress.collectedCount();
+        if (progress == null) return 0;
+        int count = 0;
+        for (Entry entry : registry.all()) {
+            if (!entry.isRetired() && progress.isCollected(entry.id())) count++;
+        }
+        return count;
     }
 
+    /** As {@link #collectedCount(UUID)}, for a single category. */
     public int collectedCount(UUID uuid, Category category) {
         PlayerProgress progress = online.get(uuid);
         if (progress == null) return 0;
         int count = 0;
         for (Entry entry : registry.byCategory(category)) {
-            if (progress.isCollected(entry.id())) count++;
+            if (!entry.isRetired() && progress.isCollected(entry.id())) count++;
         }
         return count;
     }

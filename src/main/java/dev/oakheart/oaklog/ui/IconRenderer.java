@@ -165,7 +165,16 @@ public class IconRenderer {
     }
 
     public ItemStack buildButton(Material material, String nameKey, String loreKey, TagResolver... resolvers) {
-        ItemStack stack = new ItemStack(material);
+        return buildButton(new ItemStack(material), nameKey, loreKey, resolvers);
+    }
+
+    /**
+     * As {@link #buildButton(Material, String, String, TagResolver...)} but over an
+     * existing stack, so a button can use a custom item (a Nexo model, say) as its
+     * base instead of a plain Material.
+     */
+    public ItemStack buildButton(ItemStack base, String nameKey, String loreKey, TagResolver... resolvers) {
+        ItemStack stack = base == null ? new ItemStack(Material.PAPER) : base.clone();
         ItemMeta meta = stack.getItemMeta();
         if (meta == null) return stack;
 

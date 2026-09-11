@@ -143,6 +143,51 @@ detection:
     - 'minecraft:entity_painting_water'
 
 # ============================================================
+# CUSTOM CATEGORY
+# ============================================================
+# Server-added content (custom items from Nexo, ExecutableItems, pets, tags and
+# so on) is registered by adapters as Items, which buries it among vanilla items
+# and makes the Items completion percentage meaningless - on Oakheart it was 1036
+# custom entries against 585 vanilla ones. This splits it into its own category
+# so the two can be collected separately.
+#
+# Changes take effect on the next start or /oaklog reload: entries are re-routed
+# and any that moved are updated in place. Player progress is keyed on entry id,
+# so nothing is ever lost by moving entries between categories, and setting
+# enabled to false moves them all back to Items.
+#
+# Only entries an adapter placed in Items are moved. Anything an adapter
+# deliberately filed elsewhere keeps its category, and vanilla entries never
+# move - separating them from server content is the point.
+
+custom-category:
+  enabled: true
+  # Namespaces routed into the custom category. '*' means every non-vanilla
+  # namespace, which is almost always what you want. Name them individually
+  # (e.g. 'nexo', 'oakpets') to move only some and leave the rest in Items.
+  namespaces:
+    - '*'
+
+# ============================================================
+# CATEGORY APPEARANCE
+# ============================================================
+# Rename and re-icon any category. Both keys are optional: leave one out and the
+# category keeps its built-in name (its id, capitalised) and icon.
+#
+# Ids: blocks, items, entities, biomes, structures, effects, enchantments,
+#      advancements, custom
+#
+# icon accepts either a Material name (AMETHYST_SHARD) or a custom item key that
+# one of the installed adapters can resolve, such as 'nexo:my_item'. A custom
+# item renders as the real item. Anything that cannot be resolved falls back to
+# the built-in icon rather than breaking the menu.
+
+categories:
+  custom:
+    display-name: 'Curios'
+    icon: 'AMETHYST_SHARD'
+
+# ============================================================
 # STORAGE
 # ============================================================
 

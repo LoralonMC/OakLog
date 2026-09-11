@@ -36,6 +36,12 @@ public class ConfigManager {
     private List<String> excludedItems;
     private List<String> excludedEntries;
 
+    // Custom category (server content split out of ITEMS; display name is configurable)
+    private boolean customCategoryEnabled;
+    private List<String> customCategoryNamespaces;
+    private java.util.Map<String, String> categoryDisplayNames = java.util.Map.of();
+    private java.util.Map<String, String> categoryIcons = java.util.Map.of();
+
     // Storage
     private String storageFilename;
     private int flushIntervalTicks;
@@ -198,6 +204,29 @@ public class ConfigManager {
                 .toList();
         ignoredGamemodes = parseGamemodes(config.getStringList("detection.ignored-gamemodes"));
 
+        customCategoryEnabled = config.getBoolean("custom-category.enabled", true);
+        List<String> rawNamespaces = config.getStringList("custom-category.namespaces");
+        customCategoryNamespaces = rawNamespaces.isEmpty()
+                ? List.of("*")
+                : rawNamespaces.stream().map(n -> n.toLowerCase(Locale.ROOT)).toList();
+
+        java.util.Map<String, String> names = new java.util.HashMap<>();
+        java.util.Map<String, String> icons = new java.util.HashMap<>();
+        dev.oakheart.config.ConfigManager cats = config.getSection("categories");
+        if (cats != null) {
+            for (String id : cats.getKeys(false)) {
+                dev.oakheart.config.ConfigManager sec = cats.getSection(id);
+                if (sec == null) continue;
+                String key = id.toLowerCase(Locale.ROOT);
+                String display = sec.getString("display-name", null);
+                if (display != null && !display.isBlank()) names.put(key, display);
+                String icon = sec.getString("icon", null);
+                if (icon != null && !icon.isBlank()) icons.put(key, icon);
+            }
+        }
+        categoryDisplayNames = java.util.Map.copyOf(names);
+        categoryIcons = java.util.Map.copyOf(icons);
+
         storageFilename = config.getString("storage.filename", "oaklog.db");
         if (storageFilename == null || storageFilename.isBlank()) {
             storageFilename = "oaklog.db";
@@ -283,6 +312,32 @@ public class ConfigManager {
 
     public List<String> getExcludedEntries() {
         return Collections.unmodifiableList(excludedEntries);
+    }
+
+    /** Whether server content is split out of ITEMS into its own CUSTOM category. */
+    public boolean isCustomCategoryEnabled() {
+        return customCategoryEnabled;
+    }
+
+    /**
+     * Namespaces routed into CUSTOM. A single "*" (the default) means every
+     * namespace except vanilla, which is what the split is for.
+     */
+    public List<String> getCustomCategoryNamespaces() {
+        return Collections.unmodifiableList(customCategoryNamespaces);
+    }
+
+    /** Configured display name for a category, or null to use the built-in one. */
+    public String getCategoryDisplayName(dev.oakheart.oaklog.model.Category category) {
+        return category == null ? null : categoryDisplayNames.get(category.id());
+    }
+
+    /**
+     * Configured icon for a category, or null for the built-in one. May be a
+     * Material name or a custom item key such as {@code nexo:my_item}.
+     */
+    public String getCategoryIcon(dev.oakheart.oaklog.model.Category category) {
+        return category == null ? null : categoryIcons.get(category.id());
     }
 
     public String getStorageFilename() {

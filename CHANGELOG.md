@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Tick spikes caused by the PlaceholderAPI placeholders. `%oaklog_total_collected%`, `%oaklog_total_percent%`
+  and `%oaklog_rank%` fell through to a `synchronized` two-table JOIN whenever the player was not in
+  the online progress cache. Topper resolves those for every offline player it knows about, so the
+  server thread parked behind the async flush once per player. A spike-only spark profile put it at
+  **42% of all tick-spike time**, the single largest contributor to a 431 ms worst tick, while an
+  all-ticks profile showed the plugin at 0.01% and hid it completely.
+  Overall counts now come from an all-players cache refreshed on the existing async leaderboard
+  timer, and every placeholder path is guarded so it can never query the store from the server
+  thread. `%oaklog_toast_state%` returns the configured default for offline players rather than
+  reading their row.
+- `rankOverall` no longer runs two per-call queries; it reads the same cache. Its stale comment
+  about there being no cheap all-players query is now wrong, and has been corrected.
+
+## [1.3.0] - 2026-09-11
+
+### Added
+
+- **Custom category.** Server-added entries (Nexo, ExecutableItems, OakPets, OakTags, OakTools, HMCWraps, PhoenixCrates, Shopkeepers) are split out of Items into their own category. On Oakheart that is 1036 of the 1621 entries in Items, so the Items completion percentage was reporting on two unrelated collections at once. Controlled by `custom-category.enabled` and `custom-category.namespaces`; disabling it moves the entries back. Player progress is keyed on entry id and is never affected by a category move.
+- **Category appearance is configurable.** `categories.<id>.display-name` and `categories.<id>.icon` rename and re-icon any category. `icon` takes a Material or a custom item key an adapter can resolve (e.g. `nexo:my_item`), falling back to the built-in icon if it cannot be resolved. The internal id of the new category is `custom`; Oakheart displays it as "Curios".
+- `DataStore.updateEntryCategory`, so a category change can actually be applied to an existing row.
+
+### Fixed
+
+- **Category changes were silently ignored.** `RegistrySync` compared only display data when diffing an existing entry, so an entry could never move category once created: an adapter changing its category had no effect for the life of the row. Category is now part of the diff and is re-applied on every sync, which is also what makes the `custom-category` toggle work in both directions.
+- **Collected counts included retired entries** while the totals they are displayed against exclude them, so a category could show more collected than exist and a percentage above 100%. Affected 8 players on Oakheart across 11 retired-but-collected rows.
+- **Unknown category values crashed the plugin on load.** `Category.fromId` returns null for an unrecognised string and the registry's `EnumMap` lookup then threw. A row written by a newer build now falls back to Items with one warning per load, so downgrading no longer prevents startup.
+- `excluded-entries` could stop applying silently: `RegistrySync` reached its config by casting `DataStore` to `SqliteStore` inside a `catch (Throwable)` that returned an empty list. It now takes the config directly.
+
+### Changed
+
+- Category icons and display names come from one resolver instead of three duplicated `EnumMap`s in HubGui, CategoryGui and LeaderboardGui.
+- Category screen: the tab row was full at eight categories, so Back moved to slot 52 to make room for the ninth.
+- Leaderboard: the nine category tabs now fill the top row and the Total tab moved to slot 48, beside the viewer's own entry.
+
 ## [1.2.1] - 2026-08-19
 
 ### Fixed

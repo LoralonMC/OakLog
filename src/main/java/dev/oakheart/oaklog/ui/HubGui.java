@@ -12,7 +12,6 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.EnumMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -20,10 +19,11 @@ public class HubGui extends OakLogGui {
 
     private static final int PLAYER_HEAD_SLOT = 4;
 
-    // Categories laid out 4-per-row across rows 1 and 2 with one-slot gaps,
-    // matching the spread rhythm of the action-button row below.
+    // The eight vanilla-derived categories sit 4-per-row across rows 1 and 2 with
+    // one-slot gaps, matching the spread rhythm of the action-button row below.
+    // CUSTOM is deliberately set apart, centred on the row beneath them: it holds
+    // the server's own content rather than anything Minecraft ships.
     private static final Map<Integer, Category> CATEGORY_SLOTS;
-    private static final EnumMap<Category, Material> CATEGORY_ICONS = new EnumMap<>(Category.class);
 
     static {
         CATEGORY_SLOTS = Map.of(
@@ -34,16 +34,9 @@ public class HubGui extends OakLogGui {
                 19, Category.STRUCTURES,
                 21, Category.EFFECTS,
                 23, Category.ENCHANTMENTS,
-                25, Category.ADVANCEMENTS
+                25, Category.ADVANCEMENTS,
+                31, Category.CUSTOM
         );
-        CATEGORY_ICONS.put(Category.BLOCKS, Material.GRASS_BLOCK);
-        CATEGORY_ICONS.put(Category.ITEMS, Material.APPLE);
-        CATEGORY_ICONS.put(Category.ENTITIES, Material.ZOMBIE_HEAD);
-        CATEGORY_ICONS.put(Category.BIOMES, Material.OAK_SAPLING);
-        CATEGORY_ICONS.put(Category.STRUCTURES, Material.STONE_BRICKS);
-        CATEGORY_ICONS.put(Category.EFFECTS, Material.POTION);
-        CATEGORY_ICONS.put(Category.ENCHANTMENTS, Material.ENCHANTED_BOOK);
-        CATEGORY_ICONS.put(Category.ADVANCEMENTS, Material.KNOWLEDGE_BOOK);
     }
 
     private static final int BTN_RECENT = 37;
@@ -136,21 +129,18 @@ public class HubGui extends OakLogGui {
     }
 
     private void renderCategoryButtons() {
-        PlayerProgress progress = plugin.getProgressManager().get(targetUuid);
         for (Map.Entry<Integer, Category> e : CATEGORY_SLOTS.entrySet()) {
             Category category = e.getValue();
             int total = plugin.getEntryRegistry().liveCountFor(category);
-            int collected = progress == null ? 0
-                    : plugin.getProgressManager().collectedCount(targetUuid, category);
+            int collected = plugin.getProgressManager().collectedCount(targetUuid, category);
 
             TagResolver[] resolvers = new TagResolver[]{
-                    Placeholder.unparsed("category", category.name().charAt(0) +
-                            category.name().substring(1).toLowerCase(java.util.Locale.ROOT)),
+                    Placeholder.unparsed("category", plugin.getCategoryDisplay().name(category)),
                     Placeholder.unparsed("collected", String.valueOf(collected)),
                     Placeholder.unparsed("total", String.valueOf(total))
             };
             ItemStack icon = iconRenderer.buildButton(
-                    CATEGORY_ICONS.get(category),
+                    plugin.getCategoryDisplay().icon(category),
                     "gui.hub.category-name",
                     "gui.hub.category-lore",
                     resolvers);

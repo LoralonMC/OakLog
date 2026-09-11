@@ -25,12 +25,14 @@ public class RegistrySync {
     private final AdapterRegistry adapterRegistry;
     private final SetsConfig setsConfig;
     private final SetComputer setComputer;
+    private final dev.oakheart.oaklog.config.ConfigManager configManager;
     private final Logger logger;
 
     public RegistrySync(DataStore dataStore, EntryRegistry registry,
                         VanillaEnumerator vanillaEnumerator,
                         AdapterRegistry adapterRegistry,
                         SetsConfig setsConfig, SetComputer setComputer,
+                        dev.oakheart.oaklog.config.ConfigManager configManager,
                         Logger logger) {
         this.dataStore = dataStore;
         this.registry = registry;
@@ -38,6 +40,7 @@ public class RegistrySync {
         this.adapterRegistry = adapterRegistry;
         this.setsConfig = setsConfig;
         this.setComputer = setComputer;
+        this.configManager = configManager;
         this.logger = logger;
     }
 
@@ -79,10 +82,15 @@ public class RegistrySync {
             logger.info("Excluded " + excludedCount + " entries via detection.excluded-entries patterns");
         }
 
+        // Route server content into CUSTOM before diffing, so the decision lives in
+        // one place instead of in each adapter's hardcoded Category.ITEMS.
+        live.replaceAll(this::routeCategory);
+
         Set<String> liveKeys = new HashSet<>();
         List<EntryDescriptor> toInsert = new ArrayList<>();
         List<Integer> toUnretire = new ArrayList<>();
         List<DisplayUpdate> toUpdate = new ArrayList<>();
+        List<Recategorise> toRecategorise = new ArrayList<>();
 
         for (EntryDescriptor d : live) {
             String key = EntryKey.join(d.namespace(), d.key());
@@ -97,6 +105,12 @@ public class RegistrySync {
                 }
                 if (!sameDisplay(current, d)) {
                     toUpdate.add(new DisplayUpdate(current.id(), d));
+                }
+                // Category is NOT part of sameDisplay: display data and placement are
+                // separate concerns, and an entry can move category without its name
+                // changing (which is exactly what toggling `custom-category` does).
+                if (current.category() != d.category()) {
+                    toRecategorise.add(new Recategorise(current.id(), d.category()));
                 }
             }
         }
@@ -115,6 +129,9 @@ public class RegistrySync {
                     u.descriptor.iconMaterial(), u.descriptor.iconModelData(),
                     u.descriptor.detectionMeta());
         }
+        for (Recategorise r : toRecategorise) {
+            dataStore.updateEntryCategory(r.id, r.category);
+        }
         if (!toUnretire.isEmpty()) {
             dataStore.unretireEntries(toUnretire);
         }
@@ -132,22 +149,39 @@ public class RegistrySync {
         SyncResult result = new SyncResult(inserted.size(), toRetire.size(),
                 toUnretire.size(), toUpdate.size(), reloaded.size());
         logger.info(String.format(
-                "Registry sync complete: %d added, %d retired, %d revived, %d updated, %d total entries (%d live), %d set memberships",
+                "Registry sync complete: %d added, %d retired, %d revived, %d updated, %d recategorised, %d total entries (%d live), %d set memberships",
                 result.added, result.retired, result.revived, result.updated,
-                result.totalEntries, registry.liveCount(), memberships));
+                toRecategorise.size(), result.totalEntries, registry.liveCount(), memberships));
         return result;
     }
 
     private List<String> exclusionPatterns() {
-        try {
-            // Pull the config off the data store's plugin reference via the
-            // package-internal hook in OakLog. We avoid a direct ConfigManager
-            // dep here to keep RegistrySync's constructor signature stable.
-            return ((dev.oakheart.oaklog.storage.SqliteStore) dataStore)
-                    .configManagerHookForRegistrySync().getExcludedEntries();
-        } catch (Throwable t) {
-            return List.of();
+        return configManager.getExcludedEntries();
+    }
+
+    /**
+     * Places server content in {@link dev.oakheart.oaklog.model.Category#CUSTOM}.
+     *
+     * <p>Only entries an adapter put in ITEMS are moved: a descriptor that names
+     * some other category did so deliberately, and is left alone. Vanilla entries
+     * never move, since separating them from server content is the whole point.
+     */
+    private EntryDescriptor routeCategory(EntryDescriptor d) {
+        if (!configManager.isCustomCategoryEnabled()) return d;
+        if (d.category() != dev.oakheart.oaklog.model.Category.ITEMS) return d;
+        if (EntryKey.VANILLA.equalsIgnoreCase(d.namespace())) return d;
+        if (!namespaceIsCurio(d.namespace())) return d;
+        return new EntryDescriptor(d.namespace(), d.key(),
+                dev.oakheart.oaklog.model.Category.CUSTOM, d.displayName(),
+                d.iconMaterial(), d.iconModelData(), d.detectionMeta());
+    }
+
+    private boolean namespaceIsCurio(String namespace) {
+        String ns = namespace == null ? "" : namespace.toLowerCase(java.util.Locale.ROOT);
+        for (String pattern : configManager.getCustomCategoryNamespaces()) {
+            if ("*".equals(pattern) || EntryKey.globMatches(pattern, ns)) return true;
         }
+        return false;
     }
 
     private static boolean matchesExcluded(String namespacedKey, List<String> patterns) {
@@ -171,6 +205,8 @@ public class RegistrySync {
     }
 
     private record DisplayUpdate(int id, EntryDescriptor descriptor) {}
+
+    private record Recategorise(int id, dev.oakheart.oaklog.model.Category category) {}
 
     public record SyncResult(int added, int retired, int revived, int updated, int totalEntries) {}
 }

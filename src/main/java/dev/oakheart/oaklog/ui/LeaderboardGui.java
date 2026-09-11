@@ -15,38 +15,31 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
 public class LeaderboardGui extends OakLogGui {
 
     private static final Map<Integer, Category> TAB_CATEGORY = new java.util.HashMap<>();
-    private static final EnumMap<Category, Material> CATEGORY_ICONS = new EnumMap<>(Category.class);
-    private static final int TAB_TOTAL = 0;
+    // Nine categories fill the top row exactly (0-8), matching the tab strip in
+    // CategoryGui. Total no longer fits there, so it sits beside the viewer's own
+    // head at the bottom, where overall standing is already shown.
+    private static final int TAB_TOTAL = 48;
     private static final int BTN_BACK = 53;
     private static final int YOU_SLOT = 49;
 
     static {
-        TAB_CATEGORY.put(1, Category.BLOCKS);
-        TAB_CATEGORY.put(2, Category.ITEMS);
-        TAB_CATEGORY.put(3, Category.ENTITIES);
-        TAB_CATEGORY.put(4, Category.BIOMES);
-        TAB_CATEGORY.put(5, Category.STRUCTURES);
-        TAB_CATEGORY.put(6, Category.EFFECTS);
-        TAB_CATEGORY.put(7, Category.ENCHANTMENTS);
-        TAB_CATEGORY.put(8, Category.ADVANCEMENTS);
+        TAB_CATEGORY.put(0, Category.BLOCKS);
+        TAB_CATEGORY.put(1, Category.ITEMS);
+        TAB_CATEGORY.put(2, Category.ENTITIES);
+        TAB_CATEGORY.put(3, Category.BIOMES);
+        TAB_CATEGORY.put(4, Category.STRUCTURES);
+        TAB_CATEGORY.put(5, Category.EFFECTS);
+        TAB_CATEGORY.put(6, Category.ENCHANTMENTS);
+        TAB_CATEGORY.put(7, Category.ADVANCEMENTS);
+        TAB_CATEGORY.put(8, Category.CUSTOM);
 
-        CATEGORY_ICONS.put(Category.BLOCKS, Material.GRASS_BLOCK);
-        CATEGORY_ICONS.put(Category.ITEMS, Material.APPLE);
-        CATEGORY_ICONS.put(Category.ENTITIES, Material.ZOMBIE_HEAD);
-        CATEGORY_ICONS.put(Category.BIOMES, Material.OAK_SAPLING);
-        CATEGORY_ICONS.put(Category.STRUCTURES, Material.STONE_BRICKS);
-        CATEGORY_ICONS.put(Category.EFFECTS, Material.POTION);
-        CATEGORY_ICONS.put(Category.ENCHANTMENTS, Material.ENCHANTED_BOOK);
-        CATEGORY_ICONS.put(Category.ADVANCEMENTS, Material.KNOWLEDGE_BOOK);
     }
 
     private final IconRenderer iconRenderer;
@@ -87,11 +80,11 @@ public class LeaderboardGui extends OakLogGui {
         if (scope == null) addEnchantGlint(totalTab);
         inventory.setItem(TAB_TOTAL, totalTab);
         for (Map.Entry<Integer, Category> e : TAB_CATEGORY.entrySet()) {
-            Material icon = CATEGORY_ICONS.get(e.getValue());
             String key = scope == e.getValue() ? "gui.leaderboard.tab-active" : "gui.leaderboard.tab";
             TagResolver tag = Placeholder.unparsed("category",
-                    e.getValue().name().charAt(0) + e.getValue().name().substring(1).toLowerCase(Locale.ROOT));
-            ItemStack tab = iconRenderer.buildButton(icon, key, null, tag);
+                    plugin.getCategoryDisplay().name(e.getValue()));
+            ItemStack tab = iconRenderer.buildButton(
+                    plugin.getCategoryDisplay().icon(e.getValue()), key, null, tag);
             if (scope == e.getValue()) addEnchantGlint(tab);
             inventory.setItem(e.getKey(), tab);
         }

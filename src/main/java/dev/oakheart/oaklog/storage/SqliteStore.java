@@ -96,13 +96,17 @@ public class SqliteStore implements DataStore {
         return executor;
     }
 
-    public ConfigManager configManagerHookForRegistrySync() {
-        return configManager;
-    }
-
     // ========================================
     //          Entry Registry CRUD
     // ========================================
+
+    /**
+     * Category strings read from the DB that this build does not recognise.
+     * Collected by the static row mapper and drained by {@link #loadAllEntries()},
+     * so an unknown category is reported once per load instead of per row.
+     */
+    private static final java.util.Set<String> UNKNOWN_CATEGORIES =
+            java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     @Override
     public synchronized List<Entry> loadAllEntries() {
@@ -122,6 +126,13 @@ public class SqliteStore implements DataStore {
             }
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Failed to load entries", e);
+        }
+        if (!UNKNOWN_CATEGORIES.isEmpty()) {
+            logger.warning("Unknown entry categories in the database: "
+                    + String.join(", ", UNKNOWN_CATEGORIES)
+                    + ". Those entries were shown under Items. This usually means the"
+                    + " plugin was downgraded after a category was added.");
+            UNKNOWN_CATEGORIES.clear();
         }
         return entries;
     }
@@ -204,6 +215,19 @@ public class SqliteStore implements DataStore {
             stmt.executeUpdate();
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "Failed to update entry display for id " + id, e);
+        }
+    }
+
+    @Override
+    public synchronized void updateEntryCategory(int id, Category category) {
+        String sql = "UPDATE entries SET category = ? WHERE id = ?";
+        try {
+            PreparedStatement stmt = prepareCached(sql);
+            stmt.setString(1, category.id());
+            stmt.setInt(2, id);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to update entry category for id " + id, e);
         }
     }
 
@@ -452,6 +476,30 @@ public class SqliteStore implements DataStore {
     }
 
     @Override
+    public synchronized Map<UUID, LeaderboardRow> allCollectedCounts() {
+        String sql = """
+                SELECT c.player_uuid AS uuid, COUNT(*) AS count, MAX(c.collected_at) AS latest
+                FROM collected c
+                JOIN entries e ON c.entry_id = e.id
+                WHERE e.retired_at IS NULL
+                GROUP BY c.player_uuid
+                """;
+        Map<UUID, LeaderboardRow> out = new HashMap<>();
+        try {
+            PreparedStatement stmt = prepareCached(sql);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    UUID uuid = UUID.fromString(rs.getString("uuid"));
+                    out.put(uuid, new LeaderboardRow(uuid, rs.getInt("count"), rs.getLong("latest")));
+                }
+            }
+        } catch (SQLException | IllegalArgumentException e) {
+            logger.log(Level.SEVERE, "Failed to read overall collected counts", e);
+        }
+        return out;
+    }
+
+    @Override
     public synchronized List<LeaderboardRow> topByCategory(dev.oakheart.oaklog.model.Category category, int limit) {
         String sql = """
                 SELECT c.player_uuid AS uuid, COUNT(*) AS count, MAX(c.collected_at) AS latest
@@ -549,7 +597,15 @@ public class SqliteStore implements DataStore {
         int id = rs.getInt("id");
         String namespace = rs.getString("namespace");
         String key = rs.getString("key");
-        Category category = Category.fromId(rs.getString("category"));
+        String rawCategory = rs.getString("category");
+        Category category = Category.fromId(rawCategory);
+        if (category == null) {
+            // A category this build does not know (e.g. rows written by a newer
+            // jar, then rolled back). Park it in ITEMS rather than handing a null
+            // category to the registry, which would NPE on its EnumMap.
+            UNKNOWN_CATEGORIES.add(String.valueOf(rawCategory));
+            category = Category.ITEMS;
+        }
         String displayName = rs.getString("display_name");
         String iconMaterial = rs.getString("icon_material");
         int icmRaw = rs.getInt("icon_model_data");

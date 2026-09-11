@@ -10,7 +10,9 @@ public enum Category {
     STRUCTURES,
     EFFECTS,
     ENCHANTMENTS,
-    ADVANCEMENTS;
+    ADVANCEMENTS,
+    /** Server-added content (Nexo, ExecutableItems, OakPets, OakTags, ...), split out of ITEMS. */
+    CUSTOM;
 
     public String id() {
         return name().toLowerCase(Locale.ROOT);

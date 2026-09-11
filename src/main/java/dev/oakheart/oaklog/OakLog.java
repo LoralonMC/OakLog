@@ -71,6 +71,7 @@ public final class OakLog extends JavaPlugin {
     private SearchInput searchInput;
     private DateFormat dateFormat;
     private IconRenderer iconRenderer;
+    private dev.oakheart.oaklog.ui.CategoryDisplay categoryDisplay;
 
     @Override
     public void onEnable() {
@@ -159,12 +160,13 @@ public final class OakLog extends JavaPlugin {
         setComputer = new SetComputer(dataStore, entryRegistry);
 
         registrySync = new RegistrySync(dataStore, entryRegistry, vanillaEnumerator,
-                adapterRegistry, setsConfig, setComputer, getLogger());
+                adapterRegistry, setsConfig, setComputer, configManager, getLogger());
         progressManager = new ProgressManager(this, configManager, dataStore, entryRegistry);
         leaderboardManager = new LeaderboardManager(this, dataStore,
                 configManager.getLeaderboardTopSize(), configManager.getLeaderboardRefreshSeconds());
         dateFormat = new DateFormat(configManager);
         iconRenderer = new IconRenderer(messageManager, dateFormat, adapterRegistry);
+        categoryDisplay = new dev.oakheart.oaklog.ui.CategoryDisplay(configManager, adapterRegistry);
         auditLog = new AuditLog(this);
 
         toastService = new ToastService(this, configManager, entryRegistry, adapterRegistry);
@@ -279,6 +281,10 @@ public final class OakLog extends JavaPlugin {
 
     public IconRenderer getIconRenderer() {
         return iconRenderer;
+    }
+
+    public dev.oakheart.oaklog.ui.CategoryDisplay getCategoryDisplay() {
+        return categoryDisplay;
     }
 
     public DateFormat getDateFormatter() {

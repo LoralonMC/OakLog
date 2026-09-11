@@ -12,9 +12,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -28,21 +26,14 @@ public class CategoryGui extends OakLogGui {
             4, Category.STRUCTURES,
             5, Category.EFFECTS,
             6, Category.ENCHANTMENTS,
-            7, Category.ADVANCEMENTS
+            7, Category.ADVANCEMENTS,
+            8, Category.CUSTOM
     );
-    private static final int BTN_BACK = 8;
-    private static final EnumMap<Category, Material> CATEGORY_ICONS = new EnumMap<>(Category.class);
+    // The tab row (0-8) is full at nine categories, so Back moves to the bottom
+    // row. 50 and 52 are the only free slots there; 52 keeps it clear of the
+    // filter cluster at 47/49/51.
+    private static final int BTN_BACK = 52;
 
-    static {
-        CATEGORY_ICONS.put(Category.BLOCKS, Material.GRASS_BLOCK);
-        CATEGORY_ICONS.put(Category.ITEMS, Material.APPLE);
-        CATEGORY_ICONS.put(Category.ENTITIES, Material.ZOMBIE_HEAD);
-        CATEGORY_ICONS.put(Category.BIOMES, Material.OAK_SAPLING);
-        CATEGORY_ICONS.put(Category.STRUCTURES, Material.STONE_BRICKS);
-        CATEGORY_ICONS.put(Category.EFFECTS, Material.POTION);
-        CATEGORY_ICONS.put(Category.ENCHANTMENTS, Material.ENCHANTED_BOOK);
-        CATEGORY_ICONS.put(Category.ADVANCEMENTS, Material.KNOWLEDGE_BOOK);
-    }
 
     private static final int BTN_SEARCH = 46;
     private static final int FILTER_ALL = 47;
@@ -69,7 +60,7 @@ public class CategoryGui extends OakLogGui {
     @Override
     public void open() {
         TagResolver categoryTag = Placeholder.unparsed("category",
-                category.name().charAt(0) + category.name().substring(1).toLowerCase(Locale.ROOT));
+                plugin.getCategoryDisplay().name(category));
         inventory = Bukkit.createInventory(this, 54, plugin.getMessageManager()
                 .parse("gui.category.title", categoryTag)
                 .orElse(net.kyori.adventure.text.Component.text("Collection Log")));
@@ -170,11 +161,11 @@ public class CategoryGui extends OakLogGui {
 
     private void renderTabs() {
         for (Map.Entry<Integer, Category> e : TAB_SLOTS.entrySet()) {
-            Material icon = CATEGORY_ICONS.get(e.getValue());
             String nameKey = e.getValue() == this.category ? "gui.tab.active-name" : "gui.tab.name";
             TagResolver tag = Placeholder.unparsed("category",
-                    e.getValue().name().charAt(0) + e.getValue().name().substring(1).toLowerCase(Locale.ROOT));
-            org.bukkit.inventory.ItemStack tabIcon = iconRenderer.buildButton(icon, nameKey, null, tag);
+                    plugin.getCategoryDisplay().name(e.getValue()));
+            org.bukkit.inventory.ItemStack tabIcon = iconRenderer.buildButton(
+                    plugin.getCategoryDisplay().icon(e.getValue()), nameKey, null, tag);
             if (e.getValue() == this.category) {
                 addEnchantGlint(tabIcon);
             }
