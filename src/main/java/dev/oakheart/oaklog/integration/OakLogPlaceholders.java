@@ -45,7 +45,7 @@ public class OakLogPlaceholders extends PlaceholderExpansion {
             case "total_collected": {
                 PlayerProgress progress = plugin.getProgressManager().get(player.getUniqueId());
                 int n = progress == null
-                        ? plugin.getDataStore().collectedCountOverall(player.getUniqueId())
+                        ? plugin.getLeaderboardManager().collectedOverall(player.getUniqueId())
                         : progress.collectedCount();
                 return String.valueOf(n);
             }
@@ -56,6 +56,13 @@ public class OakLogPlaceholders extends PlaceholderExpansion {
             case "toast_state": {
                 PlayerProgress progress = plugin.getProgressManager().get(player.getUniqueId());
                 if (progress != null) return progress.toastState().id();
+                // Never query the store from the server thread: this placeholder can be resolved
+                // for offline players, and every DataStore method shares one monitor with the
+                // async flush. The configured default is a fine answer for a player who is not
+                // online to see their own setting anyway.
+                if (org.bukkit.Bukkit.isPrimaryThread()) {
+                    return plugin.getConfigManager().getToastDefaultState();
+                }
                 PlayerProgress.ToastState fallback =
                         plugin.getDataStore().loadToastState(player.getUniqueId());
                 return (fallback != null ? fallback.id() : plugin.getConfigManager().getToastDefaultState());
@@ -87,7 +94,7 @@ public class OakLogPlaceholders extends PlaceholderExpansion {
     private int getCollectedTotal(OfflinePlayer player) {
         PlayerProgress progress = plugin.getProgressManager().get(player.getUniqueId());
         if (progress != null) return progress.collectedCount();
-        return plugin.getDataStore().collectedCountOverall(player.getUniqueId());
+        return plugin.getLeaderboardManager().collectedOverall(player.getUniqueId());
     }
 
     private static String percent(int collected, int total) {
