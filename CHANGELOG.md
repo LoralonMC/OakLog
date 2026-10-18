@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-10-18
+
+### Fixed
+- Tropical fish varieties were matched against a wrong table: 12 of the 22 named presets had the
+  wrong pattern or colours. Ten of them (Anemone, Black Tang, Butterflyfish, Cichlid, Dottyback,
+  Queen Angelfish, Red Cichlid, Red Lipped Blenny, Triggerfish, Yellow Tang) could never be logged,
+  and two were credited as other fish: a Black Tang as Blue Tang, a Queen Angelfish as Yellowtail
+  Parrotfish. The table is now copied from `TropicalFish.COMMON_VARIANTS` in the 26.1.2 server jar.
+- Existing credits are corrected by a database migration (schema 2) on first start: every Blue
+  Tang credit moves to Black Tang and every Yellowtail Parrotfish credit to Queen Angelfish. The
+  wrong combinations were exactly the real ones, so those credits were always the other fish.
+  Player totals are unchanged.
+
+## [1.3.1] - 2026-09-14
+
 ### Fixed
 - Tick spikes caused by the PlaceholderAPI placeholders. `%oaklog_total_collected%`, `%oaklog_total_percent%`
   and `%oaklog_rank%` fell through to a `synchronized` two-table JOIN whenever the player was not in
@@ -20,6 +35,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   reading their row.
 - `rankOverall` no longer runs two per-call queries; it reads the same cache. Its stale comment
   about there being no cheap all-players query is now wrong, and has been corrected.
+- **A goat horn carrying no instrument component of its own logged nothing.** The eight horns share
+  one Material and are told apart by their instrument, which was read through `MusicInstrumentMeta`.
+  That reports only an instrument the item carries explicitly, while a horn without the
+  `minecraft:instrument` component still plays and reads in game as the item type's default,
+  Ponder. Anything that copies a horn while dropping components equal to the defaults produces
+  one — a Shopkeepers trade result on Oakheart did — and since Goat Horn is deliberately
+  enumerated as eight variants with no plain `goat_horn` entry, there was nothing to fall back
+  to and the pickup was dropped silently. The instrument is now read through the data-component
+  API, which resolves the item type's default, with the meta kept as a fallback.
 
 ## [1.3.0] - 2026-09-11
 

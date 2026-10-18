@@ -20,28 +20,33 @@ public final class TropicalFishVariant implements VariantResolver {
     private static final Map<String, String> COMBO_TO_KEY = new LinkedHashMap<>();
 
     static {
-        register("anemone", TropicalFish.Pattern.FLOPPER, DyeColor.ORANGE, DyeColor.GRAY);
-        register("black_tang", TropicalFish.Pattern.DASHER, DyeColor.GRAY, DyeColor.BLUE);
-        register("blue_tang", TropicalFish.Pattern.FLOPPER, DyeColor.GRAY, DyeColor.GRAY);
-        register("butterflyfish", TropicalFish.Pattern.BLOCKFISH, DyeColor.WHITE, DyeColor.GRAY);
-        register("cichlid", TropicalFish.Pattern.SUNSTREAK, DyeColor.PURPLE, DyeColor.LIGHT_BLUE);
+        // Order and values copied from TropicalFish.COMMON_VARIANTS in the 26.1.2 server jar;
+        // index N is lang key entity.minecraft.tropical_fish.predefined.N. Until 1.3.2, 12 of
+        // these rows were wrong (ticket bug-52): ten fish could never be logged, and Black Tang
+        // and Queen Angelfish were credited as Blue Tang and Yellowtail Parrotfish. Re-derive
+        // from the jar rather than a wiki if this ever needs touching.
+        register("anemone", TropicalFish.Pattern.STRIPEY, DyeColor.ORANGE, DyeColor.GRAY);
+        register("black_tang", TropicalFish.Pattern.FLOPPER, DyeColor.GRAY, DyeColor.GRAY);
+        register("blue_tang", TropicalFish.Pattern.FLOPPER, DyeColor.GRAY, DyeColor.BLUE);
+        register("butterflyfish", TropicalFish.Pattern.CLAYFISH, DyeColor.WHITE, DyeColor.GRAY);
+        register("cichlid", TropicalFish.Pattern.SUNSTREAK, DyeColor.BLUE, DyeColor.GRAY);
         register("clownfish", TropicalFish.Pattern.KOB, DyeColor.ORANGE, DyeColor.WHITE);
         register("cotton_candy_betta", TropicalFish.Pattern.SPOTTY, DyeColor.PINK, DyeColor.LIGHT_BLUE);
-        register("dottyback", TropicalFish.Pattern.BLOCKFISH, DyeColor.MAGENTA, DyeColor.YELLOW);
+        register("dottyback", TropicalFish.Pattern.BLOCKFISH, DyeColor.PURPLE, DyeColor.YELLOW);
         register("emperor_red_snapper", TropicalFish.Pattern.CLAYFISH, DyeColor.WHITE, DyeColor.RED);
         register("goatfish", TropicalFish.Pattern.SPOTTY, DyeColor.WHITE, DyeColor.YELLOW);
         register("moorish_idol", TropicalFish.Pattern.GLITTER, DyeColor.WHITE, DyeColor.GRAY);
         register("ornate_butterflyfish", TropicalFish.Pattern.CLAYFISH, DyeColor.WHITE, DyeColor.ORANGE);
         register("parrotfish", TropicalFish.Pattern.DASHER, DyeColor.CYAN, DyeColor.PINK);
-        register("queen_angelfish", TropicalFish.Pattern.GLITTER, DyeColor.LIME, DyeColor.LIGHT_BLUE);
-        register("red_cichlid", TropicalFish.Pattern.BRINELY, DyeColor.RED, DyeColor.WHITE);
-        register("red_lipped_blenny", TropicalFish.Pattern.BLOCKFISH, DyeColor.GRAY, DyeColor.RED);
+        register("queen_angelfish", TropicalFish.Pattern.BRINELY, DyeColor.LIME, DyeColor.LIGHT_BLUE);
+        register("red_cichlid", TropicalFish.Pattern.BETTY, DyeColor.RED, DyeColor.WHITE);
+        register("red_lipped_blenny", TropicalFish.Pattern.SNOOPER, DyeColor.GRAY, DyeColor.RED);
         register("red_snapper", TropicalFish.Pattern.BLOCKFISH, DyeColor.RED, DyeColor.WHITE);
         register("threadfin", TropicalFish.Pattern.FLOPPER, DyeColor.WHITE, DyeColor.YELLOW);
         register("tomato_clownfish", TropicalFish.Pattern.KOB, DyeColor.RED, DyeColor.WHITE);
-        register("triggerfish", TropicalFish.Pattern.CLAYFISH, DyeColor.GRAY, DyeColor.WHITE);
-        register("yellowtail_parrotfish", TropicalFish.Pattern.BRINELY, DyeColor.LIME, DyeColor.LIGHT_BLUE);
-        register("yellow_tang", TropicalFish.Pattern.BLOCKFISH, DyeColor.YELLOW, DyeColor.YELLOW);
+        register("triggerfish", TropicalFish.Pattern.SUNSTREAK, DyeColor.GRAY, DyeColor.WHITE);
+        register("yellowtail_parrotfish", TropicalFish.Pattern.DASHER, DyeColor.CYAN, DyeColor.YELLOW);
+        register("yellow_tang", TropicalFish.Pattern.FLOPPER, DyeColor.YELLOW, DyeColor.YELLOW);
     }
 
     private static void register(String name, TropicalFish.Pattern pattern, DyeColor body, DyeColor patternColor) {

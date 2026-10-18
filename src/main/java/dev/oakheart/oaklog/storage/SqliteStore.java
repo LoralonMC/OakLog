@@ -670,13 +670,70 @@ public class SqliteStore implements DataStore {
             return Schema.CURRENT_VERSION;
         }
 
-        if (current < Schema.CURRENT_VERSION) {
-            logger.info("Migrating database from schema " + current + " to " + Schema.CURRENT_VERSION);
-            recordSchemaVersion(Schema.CURRENT_VERSION, "Migration to " + Schema.CURRENT_VERSION);
-            return Schema.CURRENT_VERSION;
+        if (current < 2) {
+            migrateTo2();
+            current = 2;
         }
 
         return current;
+    }
+
+    /**
+     * Moves tropical fish credits filed under the wrong variety. Until 1.3.2 the resolver's
+     * table had Black Tang's colours under {@code blue_tang} and Queen Angelfish's under
+     * {@code yellowtail_parrotfish}, so every credit for those two keys is really the other
+     * fish: the wrong combinations are exactly the real ones, and no other fish can produce
+     * them. Each player's total is unchanged. A fresh database has no entries yet and so
+     * moves nothing. Runs in one transaction with the version stamp, so it applies once.
+     */
+    private void migrateTo2() throws SQLException {
+        String[][] moves = {
+                {"entity_tropical_fish_blue_tang", "entity_tropical_fish_black_tang"},
+                {"entity_tropical_fish_yellowtail_parrotfish", "entity_tropical_fish_queen_angelfish"},
+        };
+        boolean autoCommit = connection.getAutoCommit();
+        connection.setAutoCommit(false);
+        try {
+            int moved = 0;
+            for (String[] move : moves) {
+                Integer from = entryId("minecraft", move[0]);
+                Integer to = entryId("minecraft", move[1]);
+                if (from == null || to == null) {
+                    continue;
+                }
+                try (PreparedStatement copy = connection.prepareStatement(
+                        "INSERT OR IGNORE INTO collected (player_uuid, entry_id, collected_at) "
+                                + "SELECT player_uuid, ?, collected_at FROM collected WHERE entry_id = ?");
+                     PreparedStatement delete = connection.prepareStatement(
+                             "DELETE FROM collected WHERE entry_id = ?")) {
+                    copy.setInt(1, to);
+                    copy.setInt(2, from);
+                    moved += copy.executeUpdate();
+                    delete.setInt(1, from);
+                    delete.executeUpdate();
+                }
+            }
+            recordSchemaVersion(2, "Re-file tropical fish credits from the corrected variant table");
+            connection.commit();
+            logger.info("Database migrated to schema 2: moved " + moved
+                    + " tropical fish credits to the variety they belong to");
+        } catch (SQLException e) {
+            connection.rollback();
+            throw e;
+        } finally {
+            connection.setAutoCommit(autoCommit);
+        }
+    }
+
+    private Integer entryId(String namespace, String key) throws SQLException {
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "SELECT id FROM entries WHERE namespace = ? AND key = ?")) {
+            stmt.setString(1, namespace);
+            stmt.setString(2, key);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : null;
+            }
+        }
     }
 
     private void recordSchemaVersion(int version, String description) throws SQLException {
