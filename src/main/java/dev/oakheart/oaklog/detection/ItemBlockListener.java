@@ -5,6 +5,7 @@ import dev.oakheart.oaklog.integration.adapter.AdapterRegistry;
 import dev.oakheart.oaklog.integration.adapter.EntryAdapter;
 import dev.oakheart.oaklog.progress.ProgressManager;
 import dev.oakheart.oaklog.registry.EntryRegistry;
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
 import org.bukkit.Material;
 import org.bukkit.MusicInstrument;
@@ -141,10 +142,25 @@ public class ItemBlockListener implements Listener {
         }
     }
 
+    /**
+     * The eight goat horns share one Material and differ only by instrument, so the
+     * instrument is what picks the entry.
+     *
+     * <p>Read through the data-component API rather than {@link MusicInstrumentMeta}: the
+     * meta only reports an instrument the item carries explicitly, while a goat horn with
+     * no {@code minecraft:instrument} component of its own still plays and reads in game as
+     * the item type's default (Ponder). Items like that are real — anything that copies a
+     * horn while dropping components equal to the defaults produces one, which is how a
+     * shop-bought Ponder horn came to log nothing at all: the meta returned null here, and
+     * there is deliberately no plain {@code goat_horn} entry to fall back to. The meta is
+     * kept as a fallback in case the component read comes back empty.
+     */
     private Integer resolveGoatHornEntry(ItemStack stack) {
         try {
-            if (!(stack.getItemMeta() instanceof MusicInstrumentMeta meta)) return null;
-            MusicInstrument instrument = meta.getInstrument();
+            MusicInstrument instrument = stack.getData(DataComponentTypes.INSTRUMENT);
+            if (instrument == null && stack.getItemMeta() instanceof MusicInstrumentMeta meta) {
+                instrument = meta.getInstrument();
+            }
             if (instrument == null) return null;
             Registry<MusicInstrument> reg = RegistryAccess.registryAccess()
                     .getRegistry(RegistryKey.INSTRUMENT);
