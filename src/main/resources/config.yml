@@ -211,6 +211,11 @@ toasts:
   # Options: on, off, milestones
   default-state: 'off'
 
+  # Seconds after a player's very first join during which nothing toasts. The
+  # first-join kit is still logged, just silently, instead of a dozen toasts at
+  # once that new players read as advancements they never earned. 0 disables.
+  first-join-quiet-seconds: 30
+
   milestones:
     # Send a milestone toast every N entries collected in a category
     every-n-entries: 25

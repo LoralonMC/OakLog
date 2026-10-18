@@ -53,6 +53,7 @@ public class ConfigManager {
     private boolean toastOnSetComplete;
     private boolean toastOnCategoryComplete;
     private boolean toastOnFullLogComplete;
+    private int toastFirstJoinQuietSeconds;
 
     // Search
     private int searchMaxResults;
@@ -240,6 +241,7 @@ public class ConfigManager {
         toastOnSetComplete = config.getBoolean("toasts.milestones.on-set-complete", true);
         toastOnCategoryComplete = config.getBoolean("toasts.milestones.on-category-complete", true);
         toastOnFullLogComplete = config.getBoolean("toasts.milestones.on-full-log-complete", true);
+        toastFirstJoinQuietSeconds = Math.max(0, config.getInt("toasts.first-join-quiet-seconds", 30));
 
         searchMaxResults = Math.max(1, config.getInt("search.max-results", 36));
 
@@ -370,6 +372,10 @@ public class ConfigManager {
 
     public boolean isToastOnFullLogComplete() {
         return toastOnFullLogComplete;
+    }
+
+    public int getToastFirstJoinQuietSeconds() {
+        return toastFirstJoinQuietSeconds;
     }
 
     public int getSearchMaxResults() {

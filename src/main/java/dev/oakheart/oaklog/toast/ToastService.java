@@ -28,12 +28,15 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 public class ToastService implements Listener {
@@ -45,6 +48,11 @@ public class ToastService implements Listener {
     private final Logger logger;
     private boolean available;
     private boolean warned;
+
+    // Brand-new players are logged silently for a short while: the first-join kit
+    // otherwise lands as a dozen toasts at once, which new players read as a flood
+    // of advancements they never earned.
+    private final Map<UUID, Long> quietUntil = new ConcurrentHashMap<>();
 
     public ToastService(OakLog plugin, ConfigManager configManager, EntryRegistry registry,
                         AdapterRegistry adapterRegistry) {
@@ -58,6 +66,26 @@ public class ToastService implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onProgress(ProgressEvent event) {
         onEntryCollected(event.getPlayer(), event.getEntry(), plugin.getProgressManager());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onJoin(PlayerJoinEvent event) {
+        int seconds = configManager.getToastFirstJoinQuietSeconds();
+        if (seconds <= 0 || event.getPlayer().hasPlayedBefore()) return;
+        quietUntil.put(event.getPlayer().getUniqueId(), System.currentTimeMillis() + seconds * 1000L);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onQuit(PlayerQuitEvent event) {
+        quietUntil.remove(event.getPlayer().getUniqueId());
+    }
+
+    private boolean isQuiet(Player player) {
+        Long until = quietUntil.get(player.getUniqueId());
+        if (until == null) return false;
+        if (System.currentTimeMillis() < until) return true;
+        quietUntil.remove(player.getUniqueId());
+        return false;
     }
 
     public void initialize() {
@@ -82,7 +110,7 @@ public class ToastService implements Listener {
     }
 
     public void onEntryCollected(Player player, Entry entry, ProgressManager progressManager) {
-        if (!available) return;
+        if (!available || isQuiet(player)) return;
 
         PlayerProgress progress = progressManager.get(player.getUniqueId());
         if (progress == null) return;
@@ -124,7 +152,7 @@ public class ToastService implements Listener {
     }
 
     public void onSetCompleted(Player player, String setDisplayName) {
-        if (!available || !configManager.isToastOnSetComplete()) return;
+        if (!available || !configManager.isToastOnSetComplete() || isQuiet(player)) return;
         ToastState state = plugin.getProgressManager().get(player.getUniqueId()).toastState();
         if (state == ToastState.OFF) return;
 

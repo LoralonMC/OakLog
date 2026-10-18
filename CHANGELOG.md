@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.3] - 2026-10-18
+
+### Changed
+- A player's first join is quiet: for `toasts.first-join-quiet-seconds` (default 30) after it, nothing
+  toasts. The first-join kit used to arrive as about 15 toasts at once (13 items, the starting biome,
+  the Getting an Upgrade entry, the Cottage set), and new players asked why they were being flooded
+  with advancements. The entries are still logged, silently.
+
 ## [1.3.2] - 2026-10-18
 
 ### Fixed
