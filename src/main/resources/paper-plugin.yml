@@ -2,7 +2,7 @@ name: OakLog
 version: '${version}'
 main: dev.oakheart.oaklog.OakLog
 description: 'Per-player collection log for blocks, items, entities, biomes, structures, effects, and enchantments.'
-api-version: '26.1.2'
+api-version: '26.3'
 authors:
   - Loralon
 website: https://github.com/LoralonMC/OakLog
