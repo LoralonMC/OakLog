@@ -3,9 +3,12 @@ package dev.oakheart.oaklog.variants;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.Art;
+import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
+import org.bukkit.Tag;
 import org.bukkit.entity.Axolotl;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.Chicken;
@@ -25,8 +28,10 @@ import org.bukkit.entity.Pig;
 import org.bukkit.entity.Rabbit;
 import org.bukkit.entity.Salmon;
 import org.bukkit.entity.Sheep;
+import org.bukkit.entity.SulfurCube;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.ZombieNautilus;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -66,6 +71,7 @@ public final class VariantResolvers {
         resolvers.put(EntityType.CHICKEN, new ChickenVariant());
         resolvers.put(EntityType.SALMON, new SalmonVariant());
         resolvers.put(EntityType.CREEPER, new CreeperVariant());
+        resolvers.put(EntityType.SULFUR_CUBE, new SulfurCubeVariant());
     }
 
     public VariantResolver get(EntityType type) {
@@ -460,6 +466,67 @@ public final class VariantResolvers {
         @Override
         public String iconMaterial(String variantKey) {
             return "PAINTING";
+        }
+    }
+
+    /**
+     * Sulfur cubes take their archetype from the block they have swallowed. The API exposes
+     * the swallowed item but not the archetype, so this matches the item against each
+     * archetype's vanilla item tag ({@code minecraft:sulfur_cube_archetype/<archetype>}). A cube
+     * that has swallowed nothing has no archetype and counts as the base entry.
+     */
+    private static final class SulfurCubeVariant implements VariantResolver {
+        private static final Map<String, String> ICONS = Map.ofEntries(
+                Map.entry("bouncy", "OAK_PLANKS"),
+                Map.entry("explosive", "TNT"),
+                Map.entry("fast_flat", "TUBE_CORAL_BLOCK"),
+                Map.entry("fast_sliding", "BLUE_ICE"),
+                Map.entry("high_resistance", "SOUL_SAND"),
+                Map.entry("hot", "MAGMA_BLOCK"),
+                Map.entry("light", "WHITE_WOOL"),
+                Map.entry("regular", "MUD"),
+                Map.entry("slow_bouncy", "ANDESITE"),
+                Map.entry("slow_flat", "IRON_BLOCK"),
+                Map.entry("slow_sliding", "RED_MUSHROOM_BLOCK"),
+                Map.entry("sticky", "HONEYCOMB_BLOCK"));
+
+        @Override
+        public List<String> variantKeys() {
+            Registry<SulfurCube.Archetype> reg =
+                    RegistryAccess.registryAccess().getRegistry(RegistryKey.SULFUR_CUBE_ARCHETYPE);
+            List<String> out = new ArrayList<>();
+            for (SulfurCube.Archetype a : reg) {
+                NamespacedKey nk = reg.getKey(a);
+                if (nk != null) out.add(nk.getKey());
+            }
+            return out;
+        }
+
+        @Override
+        public String resolve(Entity entity) {
+            if (!(entity instanceof SulfurCube cube)) return null;
+            ItemStack held = cube.getEquipped();
+            if (held == null || held.getType().isAir()) return null;
+            Registry<SulfurCube.Archetype> reg =
+                    RegistryAccess.registryAccess().getRegistry(RegistryKey.SULFUR_CUBE_ARCHETYPE);
+            for (SulfurCube.Archetype a : reg) {
+                NamespacedKey nk = reg.getKey(a);
+                if (nk == null) continue;
+                Tag<Material> items = Bukkit.getTag(Tag.REGISTRY_ITEMS,
+                        new NamespacedKey(nk.getNamespace(), "sulfur_cube_archetype/" + nk.getKey()), Material.class);
+                if (items != null && items.isTagged(held.getType())) return nk.getKey();
+            }
+            return null;
+        }
+
+        @Override
+        public String iconMaterial(String variantKey) {
+            return ICONS.get(variantKey);
+        }
+
+        @Override
+        public boolean hasBaseEntry() {
+            return true;
         }
     }
 }

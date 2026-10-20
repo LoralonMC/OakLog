@@ -61,6 +61,7 @@ public final class IconDefaults {
 
             // Misc surface
             Map.entry("cherry_grove", "CHERRY_SAPLING"),
+            Map.entry("dappled_forest", "POPLAR_SAPLING"),
             Map.entry("meadow", "WILDFLOWERS"),
             Map.entry("grove", "SNOW"),
 
@@ -96,6 +97,7 @@ public final class IconDefaults {
             Map.entry("dripstone_caves", "DRIPSTONE_BLOCK"),
             Map.entry("lush_caves", "FLOWERING_AZALEA"),
             Map.entry("deep_dark", "SCULK"),
+            Map.entry("sulfur_caves", "SULFUR"),
 
             // Nether
             Map.entry("nether_wastes", "NETHERRACK"),

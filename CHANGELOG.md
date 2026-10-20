@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.4.0] - 2026-10-20
 
+### Added
+
+- Sulfur Cube entries, one per archetype (bouncy, explosive, hot, sticky and the rest), plus a base entry for a cube that has swallowed nothing. The archetype is read from the swallowed block via the vanilla `minecraft:sulfur_cube_archetype/*` item tags; each entry's icon is that archetype's block.
+- Dappled Forest (temperate) and Sulfur Caves (underground) in the default `biome-groups.yml`, with Poplar Sapling and Sulfur icons. Existing `biome-groups.yml` files keep their own lists, so add the two biomes there by hand or the biomes show under Other.
+
 ### Changed
 
 - Targets Paper 26.3 (`api-version: '26.3'`, built against paper-api 26.3). This build no longer loads on 26.1.2.

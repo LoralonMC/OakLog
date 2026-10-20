@@ -55,6 +55,7 @@ overworld:
     - deep_lukewarm_ocean
     - stony_peaks
     - cherry_grove
+    - dappled_forest
   warm:
     - desert
     - savanna
@@ -72,6 +73,7 @@ overworld:
     - dripstone_caves
     - lush_caves
     - deep_dark
+    - sulfur_caves
 
 nether:
   - nether_wastes
